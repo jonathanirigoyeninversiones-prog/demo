@@ -2,9 +2,8 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <title>111 Reserva tu cita</title>
+    <title>Reserva tu cita</title>
     <style>
-        /* Fondo aplicado correctamente */
         body {
             background-image: url('fondo-unas.png');
             background-size: cover;
@@ -13,14 +12,18 @@
             background-repeat: no-repeat;
             min-height: 100vh;
             margin: 0;
-            font-family: Arial, sans-serif;
+            font-family: 'Segoe UI', sans-serif;
         }
         .menu { display: flex; gap: 15px; background: rgba(255, 255, 255, 0.8); padding: 10px; }
-        .categoria { cursor: pointer; color: blue; text-decoration: underline; }
+        .categoria { cursor: pointer; color: #555; text-decoration: underline; }
         #calendario-container, #formulario-reserva { display: none; margin-top: 20px; padding: 15px; background: rgba(255, 255, 255, 0.9); border-radius: 8px; max-width: 400px; margin-left: 20px; }
         .hora-btn { display: block; margin: 5px; padding: 10px; cursor: pointer; background: #e0e0e0; border: none; }
         .hora-btn:disabled { background: #555; color: #aaa; cursor: not-allowed; }
         input { display: block; margin-bottom: 10px; padding: 8px; width: 250px; }
+        
+        /* Modal elegante */
+        #modal-confirmacion { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); justify-content: center; align-items: center; }
+        .modal-contenido { background: white; padding: 30px; border-radius: 12px; text-align: center; max-width: 350px; box-shadow: 0 4px 15px rgba(0,0,0,0.2); }
     </style>
 </head>
 <body>
@@ -46,6 +49,15 @@
         <input type="tel" id="telefono" placeholder="Teléfono" required>
         <input type="text" id="direccion" placeholder="Dirección" required>
         <button onclick="confirmarCita()">Confirmar cita</button>
+    </div>
+
+    <!-- Modal elegante -->
+    <div id="modal-confirmacion">
+        <div class="modal-contenido">
+            <h3>¡Gracias por confiar en nosotros!</h3>
+            <p>Muy pronto le contactaremos para confirmar los detalles de su cita.</p>
+            <button onclick="location.reload()">Aceptar</button>
+        </div>
     </div>
 
     <script type="module">
@@ -135,8 +147,7 @@
 
             try {
                 await addDoc(collection(db, "citas"), datos);
-                alert("¡Cita confirmada!");
-                location.reload();
+                document.getElementById('modal-confirmacion').style.display = 'flex';
             } catch (e) {
                 alert("Error al guardar: " + e.message);
             }
