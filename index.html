@@ -2,11 +2,12 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <title>111 Reserva tu cita</title>
+    <title>Reserva tu cita</title>
     <style>
         .menu { display: flex; gap: 15px; background: #f4f4f4; padding: 10px; }
         .categoria { cursor: pointer; color: blue; text-decoration: underline; }
         #calendario-container { display: none; margin-top: 20px; }
+        .hora-btn { display: block; margin: 5px; padding: 10px; cursor: pointer; }
     </style>
 </head>
 <body>
@@ -27,7 +28,7 @@
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/12.16.0/firebase-app.js";
-        import { getFirestore, collection, query, where, getDocs } from "https://www.gstatic.com/firebasejs/12.16.0/firebase-firestore.js";
+        import { getFirestore, doc, getDoc } from "https://www.gstatic.com/firebasejs/12.16.0/firebase-firestore.js";
 
         const firebaseConfig = {
             apiKey: "AIzaSyDCN2ah_fSjW385KgAb48W8Cd9PhFDOQJ0",
@@ -46,21 +47,31 @@
         };
 
         window.cargarHorarios = async () => {
-            const fecha = document.getElementById('fecha-cita').value;
+            const inputFecha = document.getElementById('fecha-cita').value;
+            if (!inputFecha) return;
+
+            const fecha = new Date(inputFecha + 'T00:00:00');
+            const dias = ["domingo", "lunes", "martes", "miercoles", "jueves", "viernes", "sabado"];
+            const nombreDia = dias[fecha.getDay()];
+
             const container = document.getElementById('horarios-container');
-            container.innerHTML = "Consultando...";
+            container.innerHTML = `Cargando horarios para el ${nombreDia}...`;
 
-            const q = query(collection(db, "citas"), where("fecha", "==", fecha));
-            const querySnapshot = await getDocs(q);
+            try {
+                const docRef = doc(db, "horarios", nombreDia);
+                const docSnap = await getDoc(docRef);
 
-            container.innerHTML = "<h4>Citas reservadas para este día:</h4>";
-            if (querySnapshot.empty) {
-                container.innerHTML += "<p>No hay citas reservadas aún.</p>";
-            } else {
-                querySnapshot.forEach((doc) => {
-                    const data = doc.data();
-                    container.innerHTML += `<p>${data.hora} - ${data.nombre} (${data.categoria})</p>`;
-                });
+                if (docSnap.exists()) {
+                    const horas = docSnap.data().lista;
+                    container.innerHTML = `<h4>Horarios disponibles para ${nombreDia}:</h4>`;
+                    horas.forEach(hora => {
+                        container.innerHTML += `<button class="hora-btn">${hora}</button>`;
+                    });
+                } else {
+                    container.innerHTML = `<p>No hay configuración de horarios para el ${nombreDia}.</p>`;
+                }
+            } catch (e) {
+                container.innerHTML = `<p>Error al cargar: ${e.message}</p>`;
             }
         };
     </script>
