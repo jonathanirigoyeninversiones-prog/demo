@@ -2,11 +2,22 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <title>Reserva tu cita</title>
+    <title>111 Reserva tu cita</title>
     <style>
-        .menu { display: flex; gap: 15px; background: #f4f4f4; padding: 10px; }
+        /* Fondo aplicado correctamente */
+        body {
+            background-image: url('fondo-unas.png');
+            background-size: cover;
+            background-position: center;
+            background-attachment: fixed;
+            background-repeat: no-repeat;
+            min-height: 100vh;
+            margin: 0;
+            font-family: Arial, sans-serif;
+        }
+        .menu { display: flex; gap: 15px; background: rgba(255, 255, 255, 0.8); padding: 10px; }
         .categoria { cursor: pointer; color: blue; text-decoration: underline; }
-        #calendario-container, #formulario-reserva { display: none; margin-top: 20px; padding: 15px; }
+        #calendario-container, #formulario-reserva { display: none; margin-top: 20px; padding: 15px; background: rgba(255, 255, 255, 0.9); border-radius: 8px; max-width: 400px; margin-left: 20px; }
         .hora-btn { display: block; margin: 5px; padding: 10px; cursor: pointer; background: #e0e0e0; border: none; }
         .hora-btn:disabled { background: #555; color: #aaa; cursor: not-allowed; }
         input { display: block; margin-bottom: 10px; padding: 8px; width: 250px; }
@@ -85,11 +96,8 @@
 
                 if (horDoc.exists()) {
                     const listaHoras = horDoc.data().lista;
-                    
-                    // Obtener hora actual en Venezuela
                     const formatter = new Intl.DateTimeFormat('es-VE', { timeZone: 'America/Caracas', hour: 'numeric', hour12: false });
                     const horaActualVzla = parseInt(formatter.format(new Date()));
-                    
                     const hoyVzla = new Date().toLocaleDateString('en-CA', { timeZone: 'America/Caracas' });
                     const esHoy = (inputFecha === hoyVzla);
 
