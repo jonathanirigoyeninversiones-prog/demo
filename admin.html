@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <title>11 Admin Login</title>
+    <title>222 Admin Login</title>
 </head>
 <body>
     <div id="login-form">
@@ -17,31 +17,47 @@
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/12.16.0/firebase-app.js";
-        import { getFirestore, collection, getDocs, doc, getDoc } from "https://www.gstatic.com/firebasejs/12.16.0/firebase-firestore.js";
+        import { getFirestore, doc, getDoc, collection, getDocs } from "https://www.gstatic.com/firebasejs/12.16.0/firebase-firestore.js";
 
-        const firebaseConfig = { /* PEGA AQUÍ TU CONFIGuración ANTERIOR */ };
+        const firebaseConfig = {
+            apiKey: "AIzaSyDCN2ah_fSjW385KgAb48W8Cd9PhFDOQJ0",
+            authDomain: "estilista-demo.firebaseapp.com",
+            projectId: "estilista-demo",
+            storageBucket: "estilista-demo.firebasestorage.app",
+            messagingSenderId: "652196958867",
+            appId: "1:652196958867:web:1c860102aa769ea6787366",
+            measurementId: "G-DTB0D8XRWK"
+        };
+
         const db = getFirestore(initializeApp(firebaseConfig));
 
         window.login = async () => {
             const u = document.getElementById('user').value;
             const p = document.getElementById('pass').value;
-            const cred = await getDoc(doc(db, "credenciales", "admin"));
             
-            if(cred.exists() && cred.data().usuario === u && cred.data().clave === p) {
-                document.getElementById('login-form').style.display = 'none';
-                document.getElementById('panel').style.display = 'block';
-                cargarCitas();
-            } else { alert("Usuario o clave incorrecta"); }
+            try {
+                const docSnap = await getDoc(doc(db, "credenciales", "admin"));
+                if (docSnap.exists()) {
+                    const data = docSnap.data();
+                    if (data.usuario === u && data.clave === p) {
+                        document.getElementById('login-form').style.display = 'none';
+                        document.getElementById('panel').style.display = 'block';
+                        
+                        // Cargar citas
+                        const snap = await getDocs(collection(db, "citas"));
+                        const container = document.getElementById('citas-container');
+                        snap.forEach(d => {
+                            const c = d.data();
+                            container.innerHTML += `<li>${c.nombre} ${c.apellido} - Dir: ${c.direccion}</li>`;
+                        });
+                    } else {
+                        alert("Usuario o clave incorrectos");
+                    }
+                }
+            } catch (e) {
+                alert("Error: " + e.message);
+            }
         };
-
-        async function cargarCitas() {
-            const snap = await getDocs(collection(db, "citas"));
-            const container = document.getElementById('citas-container');
-            snap.forEach(d => {
-                const data = d.data();
-                container.innerHTML += `<li>${data.nombre} ${data.apellido} - Tel: ${data.telefono} - <strong>Dir: ${data.direccion}</strong></li>`;
-            });
-        }
     </script>
 </body>
 </html>
