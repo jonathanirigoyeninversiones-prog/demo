@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <title>Reserva tu cita</title>
+    <title>111 Reserva tu cita</title>
     <style>
         .menu { display: flex; gap: 15px; background: #f4f4f4; padding: 10px; }
         .categoria { cursor: pointer; color: blue; text-decoration: underline; }
@@ -21,22 +21,48 @@
 
     <div id="calendario-container">
         <h3>Selecciona una fecha:</h3>
-        <!-- Aquí irá nuestro calendario -->
         <input type="date" id="fecha-cita" onchange="cargarHorarios()">
         <div id="horarios-container"></div>
     </div>
 
-    <script>
-        function seleccionarCategoria(cat) {
-            console.log("Categoría seleccionada: " + cat);
-            document.getElementById('calendario-container').style.display = 'block';
-        }
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/12.16.0/firebase-app.js";
+        import { getFirestore, collection, query, where, getDocs } from "https://www.gstatic.com/firebasejs/12.16.0/firebase-firestore.js";
 
-        function cargarHorarios() {
+        const firebaseConfig = {
+            apiKey: "AIzaSyDCN2ah_fSjW385KgAb48W8Cd9PhFDOQJ0",
+            authDomain: "estilista-demo.firebaseapp.com",
+            projectId: "estilista-demo",
+            storageBucket: "estilista-demo.firebasestorage.app",
+            messagingSenderId: "652196958867",
+            appId: "1:652196958867:web:1c860102aa769ea6787366"
+        };
+
+        const db = getFirestore(initializeApp(firebaseConfig));
+        
+        window.seleccionarCategoria = (cat) => {
+            window.categoriaActual = cat;
+            document.getElementById('calendario-container').style.display = 'block';
+        };
+
+        window.cargarHorarios = async () => {
             const fecha = document.getElementById('fecha-cita').value;
-            alert("Consultando disponibilidad para: " + fecha + " en Firebase...");
-            // Aquí conectaremos con Firestore para buscar horas libres
-        }
+            const container = document.getElementById('horarios-container');
+            container.innerHTML = "Consultando...";
+
+            const q = query(collection(db, "citas"), where("fecha", "==", fecha));
+            const querySnapshot = await getDocs(q);
+
+            container.innerHTML = "<h4>Citas reservadas para este día:</h4>";
+            if (querySnapshot.empty) {
+                container.innerHTML += "<p>No hay citas reservadas aún.</p>";
+            } else {
+                querySnapshot.forEach((doc) => {
+                    const data = doc.data();
+                    container.innerHTML += `<p>${data.hora} - ${data.nombre} (${data.categoria})</p>`;
+                });
+            }
+        };
     </script>
 </body>
 </html>
