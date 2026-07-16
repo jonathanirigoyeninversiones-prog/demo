@@ -2,53 +2,41 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <title>Citas Estilista</title>
+    <title>Reserva tu cita</title>
+    <style>
+        .menu { display: flex; gap: 15px; background: #f4f4f4; padding: 10px; }
+        .categoria { cursor: pointer; color: blue; text-decoration: underline; }
+        #calendario-container { display: none; margin-top: 20px; }
+    </style>
 </head>
 <body>
-    <h1>Reserva tu cita</h1>
-    <div id="form-container">
-        <input type="text" id="nombre" placeholder="Nombre">
-        <input type="text" id="apellido" placeholder="Apellido">
-        <input type="text" id="cedula" placeholder="Cédula">
-        <input type="text" id="telefono" placeholder="Teléfono">
-        <input type="text" id="direccion" placeholder="Dirección">
-        <button onclick="guardarCita()">Reservar</button>
+
+    <div class="menu">
+        <div class="categoria" onclick="seleccionarCategoria('Uñas')">Uñas</div>
+        <div class="categoria" onclick="seleccionarCategoria('Cabello')">Cabello</div>
+        <div class="categoria" onclick="seleccionarCategoria('Cejas')">Cejas</div>
+        <div class="categoria" onclick="seleccionarCategoria('Pestañas')">Pestañas</div>
+        <div class="categoria" onclick="seleccionarCategoria('Pies')">Pies</div>
     </div>
 
-    <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/12.16.0/firebase-app.js";
-        import { getFirestore, collection, addDoc } from "https://www.gstatic.com/firebasejs/12.16.0/firebase-firestore.js";
+    <div id="calendario-container">
+        <h3>Selecciona una fecha:</h3>
+        <!-- Aquí irá nuestro calendario -->
+        <input type="date" id="fecha-cita" onchange="cargarHorarios()">
+        <div id="horarios-container"></div>
+    </div>
 
-        const firebaseConfig = {
-            apiKey: "AIzaSyDCN2ah_fSjW385KgAb48W8Cd9PhFDOQJ0",
-            authDomain: "estilista-demo.firebaseapp.com",
-            projectId: "estilista-demo",
-            storageBucket: "estilista-demo.firebasestorage.app",
-            messagingSenderId: "652196958867",
-            appId: "1:652196958867:web:1c860102aa769ea6787366",
-            measurementId: "G-DTB0D8XRWK"
-        };
+    <script>
+        function seleccionarCategoria(cat) {
+            console.log("Categoría seleccionada: " + cat);
+            document.getElementById('calendario-container').style.display = 'block';
+        }
 
-        const app = initializeApp(firebaseConfig);
-        const db = getFirestore(app);
-
-        window.guardarCita = async () => {
-            const nombre = document.getElementById('nombre').value;
-            const apellido = document.getElementById('apellido').value;
-            const cedula = document.getElementById('cedula').value;
-            const telefono = document.getElementById('telefono').value;
-            const direccion = document.getElementById('direccion').value;
-
-            try {
-                await addDoc(collection(db, "citas"), {
-                    nombre, apellido, cedula, telefono, direccion,
-                    fecha: new Date().toISOString()
-                });
-                alert("¡Cita guardada con éxito!");
-            } catch (e) {
-                console.error("Error al guardar: ", e);
-            }
-        };
+        function cargarHorarios() {
+            const fecha = document.getElementById('fecha-cita').value;
+            alert("Consultando disponibilidad para: " + fecha + " en Firebase...");
+            // Aquí conectaremos con Firestore para buscar horas libres
+        }
     </script>
 </body>
 </html>
