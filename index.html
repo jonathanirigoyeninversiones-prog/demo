@@ -8,6 +8,7 @@
         .categoria { cursor: pointer; color: blue; text-decoration: underline; }
         #calendario-container, #formulario-reserva { display: none; margin-top: 20px; padding: 15px; }
         .hora-btn { display: block; margin: 5px; padding: 10px; cursor: pointer; background: #e0e0e0; border: none; }
+        .hora-btn:disabled { background: #555; color: #aaa; cursor: not-allowed; }
         input { display: block; margin-bottom: 10px; padding: 8px; width: 250px; }
     </style>
 </head>
@@ -38,7 +39,7 @@
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/12.16.0/firebase-app.js";
-        import { getFirestore, doc, getDoc, collection, addDoc } from "https://www.gstatic.com/firebasejs/12.16.0/firebase-firestore.js";
+        import { getFirestore, doc, getDoc, collection, addDoc, query, where, getDocs } from "https://www.gstatic.com/firebasejs/12.16.0/firebase-firestore.js";
 
         const firebaseConfig = {
             apiKey: "AIzaSyDCN2ah_fSjW385KgAb48W8Cd9PhFDOQJ0",
@@ -70,14 +71,25 @@
             container.innerHTML = `Cargando...`;
 
             try {
-                const docSnap = await getDoc(doc(db, "horarios", nombreDia));
-                if (docSnap.exists()) {
+                // 1. Verificar si el día está activo
+                const diaActivoSnap = await getDoc(doc(db, "dias_activos", nombreDia));
+                if (!diaActivoSnap.exists() || !diaActivoSnap.data().activo) {
+                    container.innerHTML = `<p>Lo sentimos, hoy no laboramos.</p>`;
+                    return;
+                }
+
+                // 2. Obtener horarios configurados y citas existentes
+                const horDoc = await getDoc(doc(db, "horarios", nombreDia));
+                const citasSnap = await getDocs(query(collection(db, "citas"), where("fecha", "==", inputFecha)));
+                const horasOcupadas = citasSnap.docs.map(doc => doc.data().hora);
+
+                if (horDoc.exists()) {
                     container.innerHTML = `<h4>Horarios para el ${nombreDia}:</h4>`;
-                    docSnap.data().lista.forEach(hora => {
-                        container.innerHTML += `<button class="hora-btn" onclick="abrirFormulario('${hora}')">${hora}</button>`;
+                    horDoc.data().lista.forEach(hora => {
+                        const estaOcupada = horasOcupadas.includes(hora);
+                        const disabled = estaOcupada ? "disabled" : "";
+                        container.innerHTML += `<button class="hora-btn" ${disabled} onclick="abrirFormulario('${hora}')">${hora} ${estaOcupada ? '(Reservado)' : ''}</button>`;
                     });
-                } else {
-                    container.innerHTML = `<p>No hay configuración para el ${nombreDia}.</p>`;
                 }
             } catch (e) {
                 container.innerHTML = `<p>Error: ${e.message}</p>`;
