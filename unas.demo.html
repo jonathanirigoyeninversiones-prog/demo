@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Reserva de Citas - Salon Beauty</title>
+    <style>
+        body {
+            background-image: url('fondo-unas.png');
+            background-size: cover;
+            background-position: center;
+            background-attachment: fixed;
+            background-repeat: no-repeat;
+            min-height: 100vh;
+            margin: 0;
+            font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+            color: #333;
+        }
+        /* Menú superior elegante */
+        .menu { 
+            display: flex; justify-content: center; gap: 30px; 
+            background: rgba(255, 255, 255, 0.9); padding: 20px; 
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .categoria { 
+            cursor: pointer; color: #555; font-weight: 600; text-transform: uppercase; letter-spacing: 1px;
+            transition: color 0.3s ease;
+        }
+        .categoria:hover { color: #d4af37; }
+        
+        /* Contenedores */
+        #calendario-container, #formulario-reserva { 
+            background: rgba(255, 255, 255, 0.95); padding: 40px; 
+            border-radius: 15px; max-width: 450px; margin: 40px auto; 
+            box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+        }
+        h3 { color: #444; margin-top: 0; }
+        
+        /* Botones estilo moderno */
+        .hora-btn { 
+            width: 100%; margin: 8px 0; padding: 12px; cursor: pointer; 
+            background: #fff; border: 1px solid #d4af37; border-radius: 5px;
+            color: #d4af37; font-weight: bold; transition: all 0.3s;
+        }
+        .hora-btn:hover { background: #d4af37; color: white; }
+        .hora-btn:disabled { border-color: #ccc; color: #ccc; background: #f9f9f9; }
+        
+        input { 
+            width: 100%; padding: 12px; margin-bottom: 15px; 
+            border: 1px solid #ddd; border-radius: 5px; box-sizing: border-box;
+        }
+        button { 
+            width: 100%; padding: 15px; background: #d4af37; color: white; 
+            border: none; border-radius: 5px; font-weight: bold; cursor: pointer;
+        }
+
+        /* Modal elegante */
+        #modal-confirmacion { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); justify-content: center; align-items: center; }
+        .modal-contenido { background: white; padding: 40px; border-radius: 15px; text-align: center; max-width: 350px; }
+    </style>
+</head>
+<body>
+
+    <div class="menu">
+        <div class="categoria" onclick="seleccionarCategoria('Uñas')">Uñas</div>
+        <div class="categoria" onclick="seleccionarCategoria('Cabello')">Cabello</div>
+        <div class="categoria" onclick="seleccionarCategoria('Cejas')">Cejas</div>
+        <div class="categoria" onclick="seleccionarCategoria('Pestañas')">Pestañas</div>
+        <div class="categoria" onclick="seleccionarCategoria('Pies')">Pies</div>
+    </div>
+
+    <div id="calendario-container">
+        <h3>Seleccione su fecha</h3>
+        <input type="date" id="fecha-cita" onchange="cargarHorarios()">
+        <div id="horarios-container"></div>
+    </div>
+
+    <div id="formulario-reserva">
+        <h3>Sus datos</h3>
+        <input type="text" id="nombre" placeholder="Nombre" required>
+        <input type="text" id="apellido" placeholder="Apellido" required>
+        <input type="tel" id="telefono" placeholder="Teléfono" required>
+        <input type="text" id="direccion" placeholder="Dirección" required>
+        <button onclick="confirmarCita()">Confirmar Reserva</button>
+    </div>
+
+    <div id="modal-confirmacion">
+        <div class="modal-contenido">
+            <h3>¡Gracias por confiar en nosotros!</h3>
+            <p>Muy pronto le contactaremos para confirmar los detalles de su cita.</p>
+            <button onclick="location.reload()">Aceptar</button>
+        </div>
+    </div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/12.16.0/firebase-app.js";
+        import { getFirestore, doc, getDoc, collection, addDoc, query, where, getDocs } from "https://www.gstatic.com/firebasejs/12.16.0/firebase-firestore.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyDCN2ah_fSjW385KgAb48W8Cd9PhFDOQJ0",
+            authDomain: "estilista-demo.firebaseapp.com",
+            projectId: "estilista-demo",
+            storageBucket: "estilista-demo.firebasestorage.app",
+            messagingSenderId: "652196958867",
+            appId: "1:652196958867:web:1c860102aa769ea6787366"
+        };
+
+        const db = getFirestore(initializeApp(firebaseConfig));
+        window.categoriaActual = "";
+        window.horaSeleccionada = "";
+
+        document.getElementById('fecha-cita').min = new Date().toLocaleDateString('en-CA', { timeZone: 'America/Caracas' });
+        
+        window.seleccionarCategoria = (cat) => {
+            window.categoriaActual = cat;
+            document.getElementById('calendario-container').style.display = 'block';
+            document.getElementById('formulario-reserva').style.display = 'none';
+        };
+
+        window.cargarHorarios = async () => {
+            const inputFecha = document.getElementById('fecha-cita').value;
+            if (!inputFecha) return;
+
+            const dias = ["domingo", "lunes", "martes", "miercoles", "jueves", "viernes", "sabado"];
+            const fechaObj = new Date(inputFecha + 'T00:00:00');
+            const nombreDia = dias[fechaObj.getDay()];
+            const container = document.getElementById('horarios-container');
+            container.innerHTML = `Cargando...`;
+
+            try {
+                const diaActivoSnap = await getDoc(doc(db, "dias_activos", nombreDia));
+                if (!diaActivoSnap.exists() || !diaActivoSnap.data().activo) {
+                    container.innerHTML = `<p>Lo sentimos, hoy no laboramos.</p>`;
+                    return;
+                }
+
+                const horDoc = await getDoc(doc(db, "horarios", nombreDia));
+                const citasSnap = await getDocs(query(collection(db, "citas"), where("fecha", "==", inputFecha)));
+                const horasOcupadas = citasSnap.docs.map(doc => doc.data().hora);
+
+                if (horDoc.exists()) {
+                    const listaHoras = horDoc.data().lista;
+                    const formatter = new Intl.DateTimeFormat('es-VE', { timeZone: 'America/Caracas', hour: 'numeric', hour12: false });
+                    const horaActualVzla = parseInt(formatter.format(new Date()));
+                    const hoyVzla = new Date().toLocaleDateString('en-CA', { timeZone: 'America/Caracas' });
+                    const esHoy = (inputFecha === hoyVzla);
+
+                    container.innerHTML = `<h4>Horarios para el ${nombreDia}:</h4>`;
+                    
+                    listaHoras.forEach(hora => {
+                        const horaNum = parseInt(hora.split(":")[0]);
+                        const estaOcupada = horasOcupadas.includes(hora);
+                        const haPasado = esHoy && (horaNum <= horaActualVzla);
+                        
+                        const disabled = (estaOcupada || haPasado) ? "disabled" : "";
+                        container.innerHTML += `<button class="hora-btn" ${disabled} onclick="abrirFormulario('${hora}')">${hora} ${estaOcupada ? '(Reservado)' : (haPasado ? '(Pasado)' : '')}</button>`;
+                    });
+                }
+            } catch (e) {
+                container.innerHTML = `<p>Error: ${e.message}</p>`;
+            }
+        };
+
+        window.abrirFormulario = (hora) => {
+            window.horaSeleccionada = hora;
+            document.getElementById('formulario-reserva').style.display = 'block';
+        };
+
+        window.confirmarCita = async () => {
+            const datos = {
+                nombre: document.getElementById('nombre').value,
+                apellido: document.getElementById('apellido').value,
+                telefono: document.getElementById('telefono').value,
+                direccion: document.getElementById('direccion').value,
+                categoria: window.categoriaActual,
+                fecha: document.getElementById('fecha-cita').value,
+                hora: window.horaSeleccionada
+            };
+
+            try {
+                await addDoc(collection(db, "citas"), datos);
+                document.getElementById('modal-confirmacion').style.display = 'flex';
+            } catch (e) {
+                alert("Error al guardar: " + e.message);
+            }
+        };
+    </script>
+</body>
+</html>
