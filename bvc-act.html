@@ -1,38 +1,62 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dólar BCV</title>
+    <style>
+        /* Estilos básicos */
+        body { font-family: sans-serif; text-align: center; padding: 50px; transition: background 0.3s, color 0.3s; }
+        
+        /* Tema Oscuro (por defecto) */
+        body.dark { background-color: #1a202c; color: white; }
+        
+        /* Tema Claro */
+        body.light { background-color: #ffffff; color: #1a202c; }
+
+        #container { padding: 20px; border-radius: 10px; border: 1px solid #4a5568; display: inline-block; }
+        #theme-toggle { position: absolute; top: 20px; right: 20px; cursor: pointer; border: none; background: none; font-size: 24px; }
+        button#refresh-btn { padding: 10px 20px; cursor: pointer; }
+    </style>
+</head>
+<body class="dark">
+
+    <button id="theme-toggle">🌙</button>
+
+    <div id="container">
+        <h1>Dólar BCV</h1>
+        <div id="price" style="font-size: 2.5rem; margin: 20px;">Consultando...</div>
+        <button id="refresh-btn">Refrescar</button>
+    </div>
+
     <script>
         const priceEl = document.getElementById('price');
-        
-        async function fetchDolar() {
-            priceEl.innerText = "Consultando...";
+        const themeBtn = document.getElementById('theme-toggle');
+        const body = document.body;
+
+        // Función para obtener el precio
+        async function obtenerPrecio() {
+            priceEl.innerText = "Cargando...";
             try {
-                // Usamos una API alternativa de monitoreo del dólar BCV
-                const response = await fetch('https://pydolarvenezuela-api.vercel.app/api/v1/dollar?monitor=bcv');
-                
-                // Si la anterior sigue fallando, probaremos esta alternativa:
-                if (!response.ok) throw new Error("API caída");
-                
-                const data = await response.json();
-                priceEl.innerText = `Bs. ${data.monitors.bcv.price}`;
-            } catch (error) {
-                // Alternativa de respaldo inmediata
-                fetch('https://ve.dolarapi.com/v1/dolares/oficial')
-                    .then(res => res.json())
-                    .then(data => {
-                        priceEl.innerText = `Bs. ${data.promedio}`;
-                    })
-                    .catch(() => {
-                        priceEl.innerText = "Error de conexión";
-                    });
+                const res = await fetch('https://ve.dolarapi.com/v1/dolares/oficial');
+                const data = await res.json();
+                priceEl.innerText = "Bs. " + data.promedio.toFixed(2);
+            } catch (e) {
+                priceEl.innerText = "Error de conexión";
             }
         }
 
-        document.getElementById('theme-toggle').onclick = () => {
-            document.documentElement.classList.toggle('dark');
-            document.body.classList.toggle('bg-gray-900');
-            document.body.classList.toggle('bg-white');
-            document.body.classList.toggle('text-white');
-            document.body.classList.toggle('text-gray-900');
+        // Cambio de tema
+        themeBtn.onclick = () => {
+            body.classList.toggle('dark');
+            body.classList.toggle('light');
+            themeBtn.innerText = body.classList.contains('dark') ? "🌙" : "☀️";
         };
 
-        document.getElementById('refresh-btn').onclick = fetchDolar;
-        fetchDolar();
+        document.getElementById('refresh-btn').onclick = obtenerPrecio;
+        
+        // Carga inicial
+        obtenerPrecio();
     </script>
+</body>
+</html>
