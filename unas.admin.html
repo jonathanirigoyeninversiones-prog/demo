@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Panel de Administración</title>
+    <style>
+        body { font-family: sans-serif; padding: 20px; }
+        table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+        th, td { border: 1px solid #ddd; padding: 10px; text-align: left; }
+        th { background-color: #f4f4f4; }
+        #login-box { text-align: center; margin-top: 50px; }
+        input { display: block; margin: 10px auto; padding: 8px; width: 250px; }
+        .confirmado-fila { background-color: #c8e6c9 !important; }
+    </style>
+</head>
+<body>
+
+    <div id="login-box">
+        <h3>Acceso Administrativo</h3>
+        <input type="email" id="user" placeholder="Correo electrónico">
+        <input type="password" id="pass" placeholder="Contraseña">
+        <button id="btn-entrar">Entrar</button>
+    </div>
+
+    <div id="admin-panel" style="display:none;">
+        <h1>Historial de Citas</h1>
+        <button onclick="location.reload()">Cerrar sesión</button>
+        <button onclick="cargarCitas()">Actualizar Manualmente</button>
+        <table>
+            <thead>
+                <tr><th>Cliente</th><th>Fecha/Hora</th><th>Teléfono</th><th>Dirección</th><th>Servicio</th><th>Acciones</th></tr>
+            </thead>
+            <tbody id="lista-citas"></tbody>
+        </table>
+    </div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/12.16.0/firebase-app.js";
+        import { getAuth, signInWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/12.16.0/firebase-auth.js";
+        import { getFirestore, collection, getDocs, doc, deleteDoc, addDoc, updateDoc } from "https://www.gstatic.com/firebasejs/12.16.0/firebase-firestore.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyDCN2ah_fSjW385KgAb48W8Cd9PhFDOQJ0",
+            authDomain: "estilista-demo.firebaseapp.com",
+            projectId: "estilista-demo",
+            storageBucket: "estilista-demo.firebasestorage.app",
+            messagingSenderId: "652196958867",
+            appId: "1:652196958867:web:1c860102aa769ea6787366"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getFirestore(app);
+
+        document.getElementById('btn-entrar').addEventListener('click', async () => {
+            const email = document.getElementById('user').value;
+            const pass = document.getElementById('pass').value;
+            try {
+                await signInWithEmailAndPassword(auth, email, pass);
+                document.getElementById('login-box').style.display = 'none';
+                document.getElementById('admin-panel').style.display = 'block';
+                cargarCitas();
+                setInterval(cargarCitas, 30000); 
+            } catch (e) { alert("Error: " + e.message); }
+        });
+
+        window.procesarCita = async (id, accion, datos) => {
+            const coleccionDestino = accion === 'listo' ? 'listos' : 'cancelado';
+            await addDoc(collection(db, coleccionDestino), datos);
+            await deleteDoc(doc(db, "citas", id));
+            cargarCitas();
+        };
+
+        window.confirmarCita = async (id) => {
+            await updateDoc(doc(db, "citas", id), { estado: 'confirmado' });
+            cargarCitas();
+        };
+
+        async function cargarCitas() {
+            const querySnapshot = await getDocs(collection(db, "citas"));
+            const tbody = document.getElementById('lista-citas');
+            tbody.innerHTML = "";
+            querySnapshot.forEach((docSnap) => {
+                const c = docSnap.data();
+                const id = docSnap.id;
+                const esConfirmado = c.estado === 'confirmado';
+                const tr = document.createElement('tr');
+                if (esConfirmado) tr.classList.add('confirmado-fila');
+                
+                tr.innerHTML = `
+                    <td>${c.nombre || ''} ${c.apellido || ''}</td>
+                    <td>${c.fecha || ''} - ${c.hora || ''}</td>
+                    <td>${c.telefono || ''}</td>
+                    <td>${c.direccion || ''}</td>
+                    <td>${c.categoria || ''}</td>
+                    <td>
+                        ${!esConfirmado ? `<button onclick="confirmarCita('${id}')">Confirmado</button>` : '<span>Confirmada</span>'}
+                        <button onclick="procesarCita('${id}', 'listo', ${JSON.stringify(c).replace(/"/g, "'")})">Listo</button>
+                        <button onclick="procesarCita('${id}', 'cancelado', ${JSON.stringify(c).replace(/"/g, "'")})">Cancelado</button>
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+    </script>
+</body>
+</html>
