@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <title>111 Reserva tu cita</title>
+    <title>Reserva tu cita</title>
     <style>
         .menu { display: flex; gap: 15px; background: #f4f4f4; padding: 10px; }
         .categoria { cursor: pointer; color: blue; text-decoration: underline; }
@@ -24,7 +24,6 @@
 
     <div id="calendario-container">
         <h3>Selecciona una fecha:</h3>
-        <!-- Se agregó el atributo 'min' para bloquear días pasados -->
         <input type="date" id="fecha-cita" onchange="cargarHorarios()">
         <div id="horarios-container"></div>
     </div>
@@ -55,8 +54,7 @@
         window.categoriaActual = "";
         window.horaSeleccionada = "";
 
-        // Configuración inicial para bloquear fechas pasadas en el calendario
-        document.getElementById('fecha-cita').min = new Date().toISOString().split("T")[0];
+        document.getElementById('fecha-cita').min = new Date().toLocaleDateString('en-CA', { timeZone: 'America/Caracas' });
         
         window.seleccionarCategoria = (cat) => {
             window.categoriaActual = cat;
@@ -68,31 +66,42 @@
             const inputFecha = document.getElementById('fecha-cita').value;
             if (!inputFecha) return;
 
-            const fecha = new Date(inputFecha + 'T00:00:00');
             const dias = ["domingo", "lunes", "martes", "miercoles", "jueves", "viernes", "sabado"];
-            const nombreDia = dias[fecha.getDay()];
+            const fechaObj = new Date(inputFecha + 'T00:00:00');
+            const nombreDia = dias[fechaObj.getDay()];
             const container = document.getElementById('horarios-container');
             container.innerHTML = `Cargando...`;
 
             try {
-                // 1. Verificar si el día está activo
                 const diaActivoSnap = await getDoc(doc(db, "dias_activos", nombreDia));
                 if (!diaActivoSnap.exists() || !diaActivoSnap.data().activo) {
                     container.innerHTML = `<p>Lo sentimos, hoy no laboramos.</p>`;
                     return;
                 }
 
-                // 2. Obtener horarios configurados y citas existentes
                 const horDoc = await getDoc(doc(db, "horarios", nombreDia));
                 const citasSnap = await getDocs(query(collection(db, "citas"), where("fecha", "==", inputFecha)));
                 const horasOcupadas = citasSnap.docs.map(doc => doc.data().hora);
 
                 if (horDoc.exists()) {
+                    const listaHoras = horDoc.data().lista;
+                    
+                    // Obtener hora actual en Venezuela
+                    const formatter = new Intl.DateTimeFormat('es-VE', { timeZone: 'America/Caracas', hour: 'numeric', hour12: false });
+                    const horaActualVzla = parseInt(formatter.format(new Date()));
+                    
+                    const hoyVzla = new Date().toLocaleDateString('en-CA', { timeZone: 'America/Caracas' });
+                    const esHoy = (inputFecha === hoyVzla);
+
                     container.innerHTML = `<h4>Horarios para el ${nombreDia}:</h4>`;
-                    horDoc.data().lista.forEach(hora => {
+                    
+                    listaHoras.forEach(hora => {
+                        const horaNum = parseInt(hora.split(":")[0]);
                         const estaOcupada = horasOcupadas.includes(hora);
-                        const disabled = estaOcupada ? "disabled" : "";
-                        container.innerHTML += `<button class="hora-btn" ${disabled} onclick="abrirFormulario('${hora}')">${hora} ${estaOcupada ? '(Reservado)' : ''}</button>`;
+                        const haPasado = esHoy && (horaNum <= horaActualVzla);
+                        
+                        const disabled = (estaOcupada || haPasado) ? "disabled" : "";
+                        container.innerHTML += `<button class="hora-btn" ${disabled} onclick="abrirFormulario('${hora}')">${hora} ${estaOcupada ? '(Reservado)' : (haPasado ? '(Pasado)' : '')}</button>`;
                     });
                 }
             } catch (e) {
