@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <title>Panel de Administración</title>
+    <title>mmm Panel de Administración</title>
     <style>
         body { font-family: sans-serif; padding: 20px; }
         table { width: 100%; border-collapse: collapse; margin-top: 20px; }
@@ -10,7 +10,7 @@
         th { background-color: #f4f4f4; }
         #login-box { text-align: center; margin-top: 50px; }
         input { display: block; margin: 10px auto; padding: 8px; width: 250px; }
-        .confirmado { background-color: green !important; color: white !important; }
+        .confirmado-fila { background-color: #c8e6c9 !important; }
     </style>
 </head>
 <body>
@@ -25,6 +25,7 @@
     <div id="admin-panel" style="display:none;">
         <h1>Historial de Citas</h1>
         <button onclick="location.reload()">Cerrar sesión</button>
+        <button onclick="cargarCitas()">Actualizar Manualmente</button>
         <table>
             <thead>
                 <tr><th>Cliente</th><th>Fecha/Hora</th><th>Teléfono</th><th>Dirección</th><th>Servicio</th><th>Acciones</th></tr>
@@ -36,7 +37,7 @@
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/12.16.0/firebase-app.js";
         import { getAuth, signInWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/12.16.0/firebase-auth.js";
-        import { getFirestore, collection, getDocs, doc, deleteDoc } from "https://www.gstatic.com/firebasejs/12.16.0/firebase-firestore.js";
+        import { getFirestore, collection, getDocs, doc, deleteDoc, addDoc } from "https://www.gstatic.com/firebasejs/12.16.0/firebase-firestore.js";
 
         const firebaseConfig = {
             apiKey: "AIzaSyDCN2ah_fSjW385KgAb48W8Cd9PhFDOQJ0",
@@ -59,20 +60,19 @@
                 document.getElementById('login-box').style.display = 'none';
                 document.getElementById('admin-panel').style.display = 'block';
                 cargarCitas();
+                setInterval(cargarCitas, 30000); // Actualización automática cada 30s
             } catch (e) { alert("Error: " + e.message); }
         });
 
-        // Función para confirmar cita (cambia color)
-        window.confirmarCita = (btn) => {
-            btn.closest('tr').classList.add('confirmado');
+        window.procesarCita = async (id, accion, datos) => {
+            const coleccionDestino = accion === 'listo' ? 'listos' : 'cancelado';
+            await addDoc(collection(db, coleccionDestino), datos);
+            await deleteDoc(doc(db, "citas", id));
+            cargarCitas();
         };
 
-        // Función para eliminar cita
-        window.eliminarCita = async (id, btn) => {
-            if (confirm("¿Marcar como listo y eliminar esta cita?")) {
-                await deleteDoc(doc(db, "citas", id));
-                btn.closest('tr').remove();
-            }
+        window.confirmarCita = async (id, btn) => {
+            btn.closest('tr').classList.add('confirmado-fila');
         };
 
         async function cargarCitas() {
@@ -90,8 +90,9 @@
                     <td>${c.direccion || ''}</td>
                     <td>${c.categoria || ''}</td>
                     <td>
-                        <button onclick="confirmarCita(this)">Confirmado</button>
-                        <button onclick="eliminarCita('${id}', this)">Listo</button>
+                        <button onclick="confirmarCita('${id}', this)">Confirmado</button>
+                        <button onclick="procesarCita('${id}', 'listo', ${JSON.stringify(c).replace(/"/g, "'")})">Listo</button>
+                        <button onclick="procesarCita('${id}', 'cancelado', ${JSON.stringify(c).replace(/"/g, "'")})">Cancelado</button>
                     </td>
                 `;
                 tbody.appendChild(tr);
