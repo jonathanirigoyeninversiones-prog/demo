@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <title>mmm Panel de Administración</title>
+    <title>Panel de Administración</title>
     <style>
         body { font-family: sans-serif; padding: 20px; }
         table { width: 100%; border-collapse: collapse; margin-top: 20px; }
@@ -37,7 +37,7 @@
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/12.16.0/firebase-app.js";
         import { getAuth, signInWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/12.16.0/firebase-auth.js";
-        import { getFirestore, collection, getDocs, doc, deleteDoc, addDoc } from "https://www.gstatic.com/firebasejs/12.16.0/firebase-firestore.js";
+        import { getFirestore, collection, getDocs, doc, deleteDoc, addDoc, updateDoc } from "https://www.gstatic.com/firebasejs/12.16.0/firebase-firestore.js";
 
         const firebaseConfig = {
             apiKey: "AIzaSyDCN2ah_fSjW385KgAb48W8Cd9PhFDOQJ0",
@@ -60,7 +60,7 @@
                 document.getElementById('login-box').style.display = 'none';
                 document.getElementById('admin-panel').style.display = 'block';
                 cargarCitas();
-                setInterval(cargarCitas, 30000); // Actualización automática cada 30s
+                setInterval(cargarCitas, 30000); 
             } catch (e) { alert("Error: " + e.message); }
         });
 
@@ -71,8 +71,9 @@
             cargarCitas();
         };
 
-        window.confirmarCita = async (id, btn) => {
-            btn.closest('tr').classList.add('confirmado-fila');
+        window.confirmarCita = async (id) => {
+            await updateDoc(doc(db, "citas", id), { estado: 'confirmado' });
+            cargarCitas();
         };
 
         async function cargarCitas() {
@@ -82,7 +83,10 @@
             querySnapshot.forEach((docSnap) => {
                 const c = docSnap.data();
                 const id = docSnap.id;
+                const esConfirmado = c.estado === 'confirmado';
                 const tr = document.createElement('tr');
+                if (esConfirmado) tr.classList.add('confirmado-fila');
+                
                 tr.innerHTML = `
                     <td>${c.nombre || ''} ${c.apellido || ''}</td>
                     <td>${c.fecha || ''} - ${c.hora || ''}</td>
@@ -90,7 +94,7 @@
                     <td>${c.direccion || ''}</td>
                     <td>${c.categoria || ''}</td>
                     <td>
-                        <button onclick="confirmarCita('${id}', this)">Confirmado</button>
+                        ${!esConfirmado ? `<button onclick="confirmarCita('${id}')">Confirmado</button>` : '<span>Confirmada</span>'}
                         <button onclick="procesarCita('${id}', 'listo', ${JSON.stringify(c).replace(/"/g, "'")})">Listo</button>
                         <button onclick="procesarCita('${id}', 'cancelado', ${JSON.stringify(c).replace(/"/g, "'")})">Cancelado</button>
                     </td>
