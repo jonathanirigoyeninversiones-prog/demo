@@ -2,43 +2,67 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <title>11 Panel de Administración</title>
+    <title>Panel de Administración</title>
+    <style>
+        body { font-family: sans-serif; padding: 20px; }
+        table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+        th, td { border: 1px solid #ddd; padding: 10px; text-align: left; }
+        th { background-color: #f4f4f4; }
+        #login-box { text-align: center; margin-top: 50px; }
+    </style>
 </head>
 <body>
-    <h1>Historial de Citas</h1>
-    <ul id="lista-citas"></ul>
+
+    <div id="login-box">
+        <h3>Acceso Administrativo</h3>
+        <input type="password" id="pass" placeholder="Contraseña">
+        <button onclick="verificar()">Entrar</button>
+    </div>
+
+    <div id="admin-panel" style="display:none;">
+        <h1>Historial de Citas</h1>
+        <table>
+            <thead>
+                <tr><th>Cliente</th><th>Fecha/Hora</th><th>Teléfono</th><th>Dirección</th><th>Servicio</th></tr>
+            </thead>
+            <tbody id="lista-citas"></tbody>
+        </table>
+    </div>
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/12.16.0/firebase-app.js";
         import { getFirestore, collection, getDocs } from "https://www.gstatic.com/firebasejs/12.16.0/firebase-firestore.js";
 
-        const firebaseConfig = {
-            apiKey: "AIzaSyDCN2ah_fSjW385KgAb48W8Cd9PhFDOQJ0",
-            authDomain: "estilista-demo.firebaseapp.com",
-            projectId: "estilista-demo",
-            storageBucket: "estilista-demo.firebasestorage.app",
-            messagingSenderId: "652196958867",
-            appId: "1:652196958867:web:1c860102aa769ea6787366"
-        };
-
+        const firebaseConfig = { /* PEGA AQUÍ TU CONFIGURACIÓN DE SIEMPRE */ };
         const db = getFirestore(initializeApp(firebaseConfig));
-        const lista = document.getElementById('lista-citas');
+
+        window.verificar = () => {
+            if (document.getElementById('pass').value === "12345") { // CAMBIA ESTA CONTRASEÑA
+                document.getElementById('login-box').style.display = 'none';
+                document.getElementById('admin-panel').style.display = 'block';
+                cargarCitas();
+            } else {
+                alert("Contraseña incorrecta");
+            }
+        };
 
         async function cargarCitas() {
             const querySnapshot = await getDocs(collection(db, "citas"));
-            lista.innerHTML = "";
+            const tbody = document.getElementById('lista-citas');
+            tbody.innerHTML = "";
             querySnapshot.forEach((doc) => {
                 const c = doc.data();
-                // Aquí estamos llamando a todos los campos que guardamos
-                lista.innerHTML += `<li>
-                    <strong>${c.nombre} ${c.apellido}</strong> - 
-                    ${c.fecha} a las ${c.hora} <br>
-                    Tel: ${c.telefono} | Dir: ${c.direccion} | Servicio: ${c.categoria}
-                </li><br>`;
+                if(c.nombre) { // Solo mostrar si tiene datos
+                    tbody.innerHTML += `<tr>
+                        <td>${c.nombre} ${c.apellido}</td>
+                        <td>${c.fecha} - ${c.hora}</td>
+                        <td>${c.telefono}</td>
+                        <td>${c.direccion}</td>
+                        <td>${c.categoria}</td>
+                    </tr>`;
+                }
             });
         }
-
-        cargarCitas();
     </script>
 </body>
 </html>
