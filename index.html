@@ -1,1 +1,54 @@
-<h1>Hola, esta es la web de la estilista</h1>.
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Citas Estilista</title>
+</head>
+<body>
+    <h1>Reserva tu cita</h1>
+    <div id="form-container">
+        <input type="text" id="nombre" placeholder="Nombre">
+        <input type="text" id="apellido" placeholder="Apellido">
+        <input type="text" id="cedula" placeholder="Cédula">
+        <input type="text" id="telefono" placeholder="Teléfono">
+        <input type="text" id="direccion" placeholder="Dirección">
+        <button onclick="guardarCita()">Reservar</button>
+    </div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/12.16.0/firebase-app.js";
+        import { getFirestore, collection, addDoc } from "https://www.gstatic.com/firebasejs/12.16.0/firebase-firestore.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyDCN2ah_fSjW385KgAb48W8Cd9PhFDOQJ0",
+            authDomain: "estilista-demo.firebaseapp.com",
+            projectId: "estilista-demo",
+            storageBucket: "estilista-demo.firebasestorage.app",
+            messagingSenderId: "652196958867",
+            appId: "1:652196958867:web:1c860102aa769ea6787366",
+            measurementId: "G-DTB0D8XRWK"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+
+        window.guardarCita = async () => {
+            const nombre = document.getElementById('nombre').value;
+            const apellido = document.getElementById('apellido').value;
+            const cedula = document.getElementById('cedula').value;
+            const telefono = document.getElementById('telefono').value;
+            const direccion = document.getElementById('direccion').value;
+
+            try {
+                await addDoc(collection(db, "citas"), {
+                    nombre, apellido, cedula, telefono, direccion,
+                    fecha: new Date().toISOString()
+                });
+                alert("¡Cita guardada con éxito!");
+            } catch (e) {
+                console.error("Error al guardar: ", e);
+            }
+        };
+    </script>
+</body>
+</html>
