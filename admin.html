@@ -2,19 +2,22 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <title>Panel de Administración</title>
+    <title>111 Panel de Administración</title>
     <style>
         body { font-family: sans-serif; padding: 20px; }
         table { width: 100%; border-collapse: collapse; margin-top: 20px; }
         th, td { border: 1px solid #ddd; padding: 10px; text-align: left; }
         th { background-color: #f4f4f4; }
         #login-box { text-align: center; margin-top: 50px; }
+        input { display: block; margin: 10px auto; padding: 8px; }
     </style>
 </head>
 <body>
 
     <div id="login-box">
         <h3>Acceso Administrativo</h3>
+        <!-- Agregamos el campo de usuario -->
+        <input type="text" id="user" placeholder="Usuario">
         <input type="password" id="pass" placeholder="Contraseña">
         <button onclick="verificar()">Entrar</button>
     </div>
@@ -33,16 +36,21 @@
         import { initializeApp } from "https://www.gstatic.com/firebasejs/12.16.0/firebase-app.js";
         import { getFirestore, collection, getDocs } from "https://www.gstatic.com/firebasejs/12.16.0/firebase-firestore.js";
 
-        const firebaseConfig = { /* PEGA AQUÍ TU CONFIGURACIÓN DE SIEMPRE */ };
+        // CONFIGURA TU FIREBASE AQUÍ
+        const firebaseConfig = { /* ... tu configuración ... */ };
         const db = getFirestore(initializeApp(firebaseConfig));
 
         window.verificar = () => {
-            if (document.getElementById('pass').value === "12345") { // CAMBIA ESTA CONTRASEÑA
+            const u = document.getElementById('user').value;
+            const p = document.getElementById('pass').value;
+
+            // Define aquí tu usuario y contraseña
+            if (u === "admin" && p === "12345") {
                 document.getElementById('login-box').style.display = 'none';
                 document.getElementById('admin-panel').style.display = 'block';
                 cargarCitas();
             } else {
-                alert("Contraseña incorrecta");
+                alert("Usuario o contraseña incorrectos");
             }
         };
 
@@ -52,7 +60,7 @@
             tbody.innerHTML = "";
             querySnapshot.forEach((doc) => {
                 const c = doc.data();
-                if(c.nombre) { // Solo mostrar si tiene datos
+                if(c.nombre) {
                     tbody.innerHTML += `<tr>
                         <td>${c.nombre} ${c.apellido}</td>
                         <td>${c.fecha} - ${c.hora}</td>
