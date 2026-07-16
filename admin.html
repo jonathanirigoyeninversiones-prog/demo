@@ -2,28 +2,28 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <title>111 Panel de Administración</title>
+    <title>Panel de Administración</title>
     <style>
         body { font-family: sans-serif; padding: 20px; }
         table { width: 100%; border-collapse: collapse; margin-top: 20px; }
         th, td { border: 1px solid #ddd; padding: 10px; text-align: left; }
         th { background-color: #f4f4f4; }
         #login-box { text-align: center; margin-top: 50px; }
-        input { display: block; margin: 10px auto; padding: 8px; }
+        input { display: block; margin: 10px auto; padding: 8px; width: 250px; }
     </style>
 </head>
 <body>
 
     <div id="login-box">
         <h3>Acceso Administrativo</h3>
-        <!-- Agregamos el campo de usuario -->
-        <input type="text" id="user" placeholder="Usuario">
+        <input type="email" id="user" placeholder="Correo electrónico">
         <input type="password" id="pass" placeholder="Contraseña">
-        <button onclick="verificar()">Entrar</button>
+        <button onclick="iniciarSesion()">Entrar</button>
     </div>
 
     <div id="admin-panel" style="display:none;">
         <h1>Historial de Citas</h1>
+        <button onclick="location.reload()">Cerrar sesión</button>
         <table>
             <thead>
                 <tr><th>Cliente</th><th>Fecha/Hora</th><th>Teléfono</th><th>Dirección</th><th>Servicio</th></tr>
@@ -34,23 +34,25 @@
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/12.16.0/firebase-app.js";
+        import { getAuth, signInWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/12.16.0/firebase-auth.js";
         import { getFirestore, collection, getDocs } from "https://www.gstatic.com/firebasejs/12.16.0/firebase-firestore.js";
 
-        // CONFIGURA TU FIREBASE AQUÍ
-        const firebaseConfig = { /* ... tu configuración ... */ };
-        const db = getFirestore(initializeApp(firebaseConfig));
+        const firebaseConfig = { /* PEGA TU CONFIGURACIÓN AQUÍ */ };
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getFirestore(app);
 
-        window.verificar = () => {
-            const u = document.getElementById('user').value;
-            const p = document.getElementById('pass').value;
+        window.iniciarSesion = async () => {
+            const email = document.getElementById('user').value;
+            const pass = document.getElementById('pass').value;
 
-            // Define aquí tu usuario y contraseña
-            if (u === "admin" && p === "12345") {
+            try {
+                await signInWithEmailAndPassword(auth, email, pass);
                 document.getElementById('login-box').style.display = 'none';
                 document.getElementById('admin-panel').style.display = 'block';
                 cargarCitas();
-            } else {
-                alert("Usuario o contraseña incorrectos");
+            } catch (e) {
+                alert("Error: " + e.message);
             }
         };
 
@@ -60,15 +62,13 @@
             tbody.innerHTML = "";
             querySnapshot.forEach((doc) => {
                 const c = doc.data();
-                if(c.nombre) {
-                    tbody.innerHTML += `<tr>
-                        <td>${c.nombre} ${c.apellido}</td>
-                        <td>${c.fecha} - ${c.hora}</td>
-                        <td>${c.telefono}</td>
-                        <td>${c.direccion}</td>
-                        <td>${c.categoria}</td>
-                    </tr>`;
-                }
+                tbody.innerHTML += `<tr>
+                    <td>${c.nombre || ''} ${c.apellido || ''}</td>
+                    <td>${c.fecha || ''} - ${c.hora || ''}</td>
+                    <td>${c.telefono || ''}</td>
+                    <td>${c.direccion || ''}</td>
+                    <td>${c.categoria || ''}</td>
+                </tr>`;
             });
         }
     </script>
