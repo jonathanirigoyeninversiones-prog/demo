@@ -2,11 +2,11 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <title>xxx Panel Administrativo</title>
+    <title>Panel Administrativo</title>
     <style>
         body { font-family: sans-serif; padding: 20px; }
         .editor-box { border: 1px solid #ccc; padding: 15px; margin-bottom: 10px; border-radius: 8px; background: #f9f9f9; }
-        input { padding: 8px; margin: 5px; }
+        input, select { padding: 8px; margin: 5px; }
         #login-box { text-align: center; margin-top: 50px; }
     </style>
 </head>
@@ -25,8 +25,15 @@
         
         <div style="background: #eef; padding: 15px; border-radius: 8px; margin-top: 20px;">
             <h3>Agregar Nuevo Servicio</h3>
-            <input type="text" id="nuevo-nombre" placeholder="Nombre del servicio">
-            <button onclick="agregarNuevoServicio()">Crear Servicio</button>
+            <input type="text" id="nuevo-nombre" placeholder="Nombre (ej. Acrigel)">
+            <select id="nueva-categoria">
+                <option value="Uñas">Uñas</option>
+                <option value="Cabello">Cabello</option>
+                <option value="Cejas">Cejas</option>
+                <option value="Pestañas">Pestañas</option>
+                <option value="Pies">Pies</option>
+            </select>
+            <button onclick="agregarNuevoServicio()">Agregar a Categoría</button>
         </div>
 
         <div id="lista-servicios" style="margin-top: 20px;"></div>
@@ -63,13 +70,12 @@
 
         window.agregarNuevoServicio = async () => {
             const nombre = document.getElementById('nuevo-nombre').value;
+            const categoria = document.getElementById('nueva-categoria').value;
             if (nombre) {
-                await addDoc(collection(db, "servicios"), { nombre });
-                alert("Servicio agregado");
+                await addDoc(collection(db, "servicios"), { nombre, categoria });
+                alert("Servicio agregado a " + categoria);
                 document.getElementById('nuevo-nombre').value = "";
                 cargarServicios();
-            } else {
-                alert("Escribe un nombre");
             }
         };
 
@@ -80,9 +86,8 @@
         };
 
         window.eliminarServicio = async (id) => {
-            if (confirm("¿Estás seguro de eliminar este servicio?")) {
+            if (confirm("¿Eliminar este servicio?")) {
                 await deleteDoc(doc(db, "servicios", id));
-                alert("Servicio eliminado");
                 cargarServicios();
             }
         };
@@ -96,8 +101,9 @@
                 const s = docSnap.data();
                 div.innerHTML += `
                     <div class="editor-box">
+                        <strong>[${s.categoria}]</strong>
                         <input type="text" id="n-${docSnap.id}" value="${s.nombre}">
-                        <button onclick="actualizarServicio('${docSnap.id}')">Guardar Cambios</button>
+                        <button onclick="actualizarServicio('${docSnap.id}')">Guardar</button>
                         <button onclick="eliminarServicio('${docSnap.id}')" style="background:#ffcccc;">Eliminar</button>
                     </div>
                 `;
