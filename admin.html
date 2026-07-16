@@ -2,22 +2,14 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <title>Panel Seguro</title>
+    <title>11 Panel de Administración</title>
 </head>
 <body>
-    <div id="login-form">
-        <input type="email" id="email" placeholder="Correo electrónico">
-        <input type="password" id="pass" placeholder="Contraseña">
-        <button onclick="login()">Entrar</button>
-    </div>
-    <div id="panel" style="display:none;">
-        <h1>Historial de Citas</h1>
-        <ul id="citas-container"></ul>
-    </div>
+    <h1>Historial de Citas</h1>
+    <ul id="lista-citas"></ul>
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/12.16.0/firebase-app.js";
-        import { getAuth, signInWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/12.16.0/firebase-auth.js";
         import { getFirestore, collection, getDocs } from "https://www.gstatic.com/firebasejs/12.16.0/firebase-firestore.js";
 
         const firebaseConfig = {
@@ -29,31 +21,24 @@
             appId: "1:652196958867:web:1c860102aa769ea6787366"
         };
 
-        const app = initializeApp(firebaseConfig);
-        const auth = getAuth(app);
-        const db = getFirestore(app);
-
-        window.login = async () => {
-            const email = document.getElementById('email').value;
-            const pass = document.getElementById('pass').value;
-            try {
-                await signInWithEmailAndPassword(auth, email, pass);
-                document.getElementById('login-form').style.display = 'none';
-                document.getElementById('panel').style.display = 'block';
-                cargarCitas();
-            } catch (e) {
-                alert("Error: " + e.message);
-            }
-        };
+        const db = getFirestore(initializeApp(firebaseConfig));
+        const lista = document.getElementById('lista-citas');
 
         async function cargarCitas() {
-            const snap = await getDocs(collection(db, "citas"));
-            const container = document.getElementById('citas-container');
-            snap.forEach(d => {
-                const c = d.data();
-                container.innerHTML += `<li>${c.nombre} - ${c.direccion}</li>`;
+            const querySnapshot = await getDocs(collection(db, "citas"));
+            lista.innerHTML = "";
+            querySnapshot.forEach((doc) => {
+                const c = doc.data();
+                // Aquí estamos llamando a todos los campos que guardamos
+                lista.innerHTML += `<li>
+                    <strong>${c.nombre} ${c.apellido}</strong> - 
+                    ${c.fecha} a las ${c.hora} <br>
+                    Tel: ${c.telefono} | Dir: ${c.direccion} | Servicio: ${c.categoria}
+                </li><br>`;
             });
         }
+
+        cargarCitas();
     </script>
 </body>
 </html>
