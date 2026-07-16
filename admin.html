@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <title>11 Panel de Administración</title>
+    <title>Panel de Administración</title>
     <style>
         body { font-family: sans-serif; padding: 20px; }
         table { width: 100%; border-collapse: collapse; margin-top: 20px; }
@@ -10,6 +10,7 @@
         th { background-color: #f4f4f4; }
         #login-box { text-align: center; margin-top: 50px; }
         input { display: block; margin: 10px auto; padding: 8px; width: 250px; }
+        .confirmado { background-color: green !important; color: white !important; }
     </style>
 </head>
 <body>
@@ -26,7 +27,7 @@
         <button onclick="location.reload()">Cerrar sesión</button>
         <table>
             <thead>
-                <tr><th>Cliente</th><th>Fecha/Hora</th><th>Teléfono</th><th>Dirección</th><th>Servicio</th></tr>
+                <tr><th>Cliente</th><th>Fecha/Hora</th><th>Teléfono</th><th>Dirección</th><th>Servicio</th><th>Acciones</th></tr>
             </thead>
             <tbody id="lista-citas"></tbody>
         </table>
@@ -35,7 +36,7 @@
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/12.16.0/firebase-app.js";
         import { getAuth, signInWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/12.16.0/firebase-auth.js";
-        import { getFirestore, collection, getDocs } from "https://www.gstatic.com/firebasejs/12.16.0/firebase-firestore.js";
+        import { getFirestore, collection, getDocs, doc, deleteDoc } from "https://www.gstatic.com/firebasejs/12.16.0/firebase-firestore.js";
 
         const firebaseConfig = {
             apiKey: "AIzaSyDCN2ah_fSjW385KgAb48W8Cd9PhFDOQJ0",
@@ -50,39 +51,51 @@
         const auth = getAuth(app);
         const db = getFirestore(app);
 
-        // MANEJADOR DE EVENTO PARA EVITAR EL ERROR DE "is not defined"
         document.getElementById('btn-entrar').addEventListener('click', async () => {
             const email = document.getElementById('user').value;
             const pass = document.getElementById('pass').value;
-
             try {
                 await signInWithEmailAndPassword(auth, email, pass);
                 document.getElementById('login-box').style.display = 'none';
                 document.getElementById('admin-panel').style.display = 'block';
                 cargarCitas();
-            } catch (e) {
-                alert("Error al iniciar: " + e.message);
-            }
+            } catch (e) { alert("Error: " + e.message); }
         });
 
-        async function cargarCitas() {
-            try {
-                const querySnapshot = await getDocs(collection(db, "citas"));
-                const tbody = document.getElementById('lista-citas');
-                tbody.innerHTML = "";
-                querySnapshot.forEach((doc) => {
-                    const c = doc.data();
-                    tbody.innerHTML += `<tr>
-                        <td>${c.nombre || ''} ${c.apellido || ''}</td>
-                        <td>${c.fecha || ''} - ${c.hora || ''}</td>
-                        <td>${c.telefono || ''}</td>
-                        <td>${c.direccion || ''}</td>
-                        <td>${c.categoria || ''}</td>
-                    </tr>`;
-                });
-            } catch (e) {
-                alert("Error al cargar citas: " + e.message);
+        // Función para confirmar cita (cambia color)
+        window.confirmarCita = (btn) => {
+            btn.closest('tr').classList.add('confirmado');
+        };
+
+        // Función para eliminar cita
+        window.eliminarCita = async (id, btn) => {
+            if (confirm("¿Marcar como listo y eliminar esta cita?")) {
+                await deleteDoc(doc(db, "citas", id));
+                btn.closest('tr').remove();
             }
+        };
+
+        async function cargarCitas() {
+            const querySnapshot = await getDocs(collection(db, "citas"));
+            const tbody = document.getElementById('lista-citas');
+            tbody.innerHTML = "";
+            querySnapshot.forEach((docSnap) => {
+                const c = docSnap.data();
+                const id = docSnap.id;
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td>${c.nombre || ''} ${c.apellido || ''}</td>
+                    <td>${c.fecha || ''} - ${c.hora || ''}</td>
+                    <td>${c.telefono || ''}</td>
+                    <td>${c.direccion || ''}</td>
+                    <td>${c.categoria || ''}</td>
+                    <td>
+                        <button onclick="confirmarCita(this)">Confirmado</button>
+                        <button onclick="eliminarCita('${id}', this)">Listo</button>
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
         }
     </script>
 </body>
