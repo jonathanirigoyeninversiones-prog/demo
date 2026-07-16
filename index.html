@@ -2,12 +2,13 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <title>Reserva tu cita</title>
+    <title>111 Reserva tu cita</title>
     <style>
         .menu { display: flex; gap: 15px; background: #f4f4f4; padding: 10px; }
         .categoria { cursor: pointer; color: blue; text-decoration: underline; }
-        #calendario-container { display: none; margin-top: 20px; }
-        .hora-btn { display: block; margin: 5px; padding: 10px; cursor: pointer; }
+        #calendario-container, #formulario-reserva { display: none; margin-top: 20px; padding: 15px; }
+        .hora-btn { display: block; margin: 5px; padding: 10px; cursor: pointer; background: #e0e0e0; border: none; }
+        input { display: block; margin-bottom: 10px; padding: 8px; width: 250px; }
     </style>
 </head>
 <body>
@@ -26,9 +27,18 @@
         <div id="horarios-container"></div>
     </div>
 
+    <div id="formulario-reserva">
+        <h3>Datos para la cita</h3>
+        <input type="text" id="nombre" placeholder="Nombre" required>
+        <input type="text" id="apellido" placeholder="Apellido" required>
+        <input type="tel" id="telefono" placeholder="Teléfono" required>
+        <input type="text" id="direccion" placeholder="Dirección" required>
+        <button onclick="confirmarCita()">Confirmar cita</button>
+    </div>
+
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/12.16.0/firebase-app.js";
-        import { getFirestore, doc, getDoc } from "https://www.gstatic.com/firebasejs/12.16.0/firebase-firestore.js";
+        import { getFirestore, doc, getDoc, collection, addDoc } from "https://www.gstatic.com/firebasejs/12.16.0/firebase-firestore.js";
 
         const firebaseConfig = {
             apiKey: "AIzaSyDCN2ah_fSjW385KgAb48W8Cd9PhFDOQJ0",
@@ -40,10 +50,13 @@
         };
 
         const db = getFirestore(initializeApp(firebaseConfig));
+        window.categoriaActual = "";
+        window.horaSeleccionada = "";
         
         window.seleccionarCategoria = (cat) => {
             window.categoriaActual = cat;
             document.getElementById('calendario-container').style.display = 'block';
+            document.getElementById('formulario-reserva').style.display = 'none';
         };
 
         window.cargarHorarios = async () => {
@@ -53,25 +66,46 @@
             const fecha = new Date(inputFecha + 'T00:00:00');
             const dias = ["domingo", "lunes", "martes", "miercoles", "jueves", "viernes", "sabado"];
             const nombreDia = dias[fecha.getDay()];
-
             const container = document.getElementById('horarios-container');
-            container.innerHTML = `Cargando horarios para el ${nombreDia}...`;
+            container.innerHTML = `Cargando...`;
 
             try {
-                const docRef = doc(db, "horarios", nombreDia);
-                const docSnap = await getDoc(docRef);
-
+                const docSnap = await getDoc(doc(db, "horarios", nombreDia));
                 if (docSnap.exists()) {
-                    const horas = docSnap.data().lista;
-                    container.innerHTML = `<h4>Horarios disponibles para ${nombreDia}:</h4>`;
-                    horas.forEach(hora => {
-                        container.innerHTML += `<button class="hora-btn">${hora}</button>`;
+                    container.innerHTML = `<h4>Horarios para el ${nombreDia}:</h4>`;
+                    docSnap.data().lista.forEach(hora => {
+                        container.innerHTML += `<button class="hora-btn" onclick="abrirFormulario('${hora}')">${hora}</button>`;
                     });
                 } else {
-                    container.innerHTML = `<p>No hay configuración de horarios para el ${nombreDia}.</p>`;
+                    container.innerHTML = `<p>No hay configuración para el ${nombreDia}.</p>`;
                 }
             } catch (e) {
-                container.innerHTML = `<p>Error al cargar: ${e.message}</p>`;
+                container.innerHTML = `<p>Error: ${e.message}</p>`;
+            }
+        };
+
+        window.abrirFormulario = (hora) => {
+            window.horaSeleccionada = hora;
+            document.getElementById('formulario-reserva').style.display = 'block';
+        };
+
+        window.confirmarCita = async () => {
+            const datos = {
+                nombre: document.getElementById('nombre').value,
+                apellido: document.getElementById('apellido').value,
+                telefono: document.getElementById('telefono').value,
+                direccion: document.getElementById('direccion').value,
+                categoria: window.categoriaActual,
+                fecha: document.getElementById('fecha-cita').value,
+                hora: window.horaSeleccionada
+            };
+
+            try {
+                await addDoc(collection(db, "citas"), datos);
+                alert("¡Cita confirmada!");
+                location.reload();
+            } catch (e) {
+                alert("Error al guardar: " + e.message);
             }
         };
     </script>
