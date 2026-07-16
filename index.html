@@ -1,188 +1,295 @@
 <!DOCTYPE html>
-<html lang="es">
+<html lang="es" class="dark-mode">
 <head>
     <meta charset="UTF-8">
-    <title>Reserva de Citas - Salon Beauty</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Portal de Demos - Jonathan Irigoyen Inversiones</title>
     <style>
-        body {
-            background-image: url('fondo-unas.png');
-            background-size: cover;
-            background-position: center;
-            background-attachment: fixed;
-            background-repeat: no-repeat;
-            min-height: 100vh;
-            margin: 0;
-            font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
-            color: #333;
-        }
-        /* Menú superior elegante */
-        .menu { 
-            display: flex; justify-content: center; gap: 30px; 
-            background: rgba(255, 255, 255, 0.9); padding: 20px; 
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-        }
-        .categoria { 
-            cursor: pointer; color: #555; font-weight: 600; text-transform: uppercase; letter-spacing: 1px;
-            transition: color 0.3s ease;
-        }
-        .categoria:hover { color: #d4af37; }
-        
-        /* Contenedores */
-        #calendario-container, #formulario-reserva { 
-            background: rgba(255, 255, 255, 0.95); padding: 40px; 
-            border-radius: 15px; max-width: 450px; margin: 40px auto; 
-            box-shadow: 0 10px 25px rgba(0,0,0,0.1);
-        }
-        h3 { color: #444; margin-top: 0; }
-        
-        /* Botones estilo moderno */
-        .hora-btn { 
-            width: 100%; margin: 8px 0; padding: 12px; cursor: pointer; 
-            background: #fff; border: 1px solid #d4af37; border-radius: 5px;
-            color: #d4af37; font-weight: bold; transition: all 0.3s;
-        }
-        .hora-btn:hover { background: #d4af37; color: white; }
-        .hora-btn:disabled { border-color: #ccc; color: #ccc; background: #f9f9f9; }
-        
-        input { 
-            width: 100%; padding: 12px; margin-bottom: 15px; 
-            border: 1px solid #ddd; border-radius: 5px; box-sizing: border-box;
-        }
-        button { 
-            width: 100%; padding: 15px; background: #d4af37; color: white; 
-            border: none; border-radius: 5px; font-weight: bold; cursor: pointer;
+        /* --- VARIABLES DE COLOR --- */
+        :root {
+            /* Tema Claro (por defecto si no usara class="dark-mode") */
+            --bg-color-light: #f4f7f6;
+            --text-color-light: #333;
+            --card-bg-light: #fff;
+            --btn-bg-light: #007bff;
+            --btn-text-light: #fff;
+            --header-bg-light: #fff;
+
+            /* Tema Oscuro (forzado con class="dark-mode") */
+            --bg-color-dark: #121212;
+            --text-color-dark: #e0e0e0;
+            --card-bg-dark: #1e1e1e;
+            --btn-bg-dark: #bb86fc;
+            --btn-text-dark: #000;
+            --header-bg-dark: #1e1e1e;
+            --icon-color-dark: #fbc02d; /* Amarillo sol */
         }
 
-        /* Modal elegante */
-        #modal-confirmacion { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); justify-content: center; align-items: center; }
-        .modal-contenido { background: white; padding: 40px; border-radius: 15px; text-align: center; max-width: 350px; }
+        /* --- ESTILOS BASE --- */
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            transition: background-color 0.3s, color 0.3s;
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+        }
+
+        /* Aplicación de colores por defecto (Claro) */
+        body {
+            background-color: var(--bg-color-light);
+            color: var(--text-color-light);
+        }
+
+        /* Aplicación de colores cuando body tiene class="dark-mode" */
+        body.dark-mode {
+            background-color: var(--bg-color-dark);
+            color: var(--text-color-dark);
+        }
+
+        /* --- HEADER --- */
+        header {
+            background-color: var(--header-bg-light);
+            padding: 1rem 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            transition: background-color 0.3s;
+        }
+
+        body.dark-mode header {
+            background-color: var(--header-bg-dark);
+            box-shadow: 0 2px 5px rgba(0,0,0,0.3);
+        }
+
+        header h1 {
+            font-size: 1.5rem;
+            font-weight: 700;
+        }
+
+        /* --- INTERRUPTOR DE TEMA (Sol/Luna) --- */
+        .theme-toggle {
+            background: none;
+            border: none;
+            cursor: pointer;
+            font-size: 1.5rem;
+            color: #757575; /* Color por defecto (luna) */
+            transition: color 0.3s, transform 0.3s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 5px;
+        }
+
+        .theme-toggle:hover {
+            transform: scale(1.1);
+        }
+
+        /* Iconos (usando emojis simples por compatibilidad) */
+        .theme-toggle .sun-icon {
+            display: none; /* Oculto por defecto en modo oscuro */
+            content: '☀️'; 
+        }
+
+        .theme-toggle .moon-icon {
+            display: block; /* Visible por defecto en modo oscuro */
+            content: '🌙';
+        }
+
+        /* Estilos cuando está en Modo Claro */
+        body:not(.dark-mode) .theme-toggle .sun-icon {
+            display: block;
+        }
+        body:not(.dark-mode) .theme-toggle .moon-icon {
+            display: none;
+        }
+        body:not(.dark-mode) .theme-toggle {
+            color: var(--icon-color-dark); /* Sol amarillo en modo claro */
+        }
+
+
+        /* --- CONTENIDO PRINCIPAL --- */
+        main {
+            flex: 1;
+            padding: 2rem;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .welcome-section {
+            text-align: center;
+            margin-bottom: 2rem;
+        }
+
+        .welcome-section h2 {
+            font-size: 2rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .welcome-section p {
+            font-size: 1.1rem;
+            opacity: 0.8;
+        }
+
+        /* Contenedor de tarjetas de demos */
+        .demos-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 1.5rem;
+            width: 100%;
+            max-width: 1000px;
+        }
+
+        /* Tarjeta de Demo Individual */
+        .demo-card {
+            background-color: var(--card-bg-light);
+            padding: 2rem;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            text-align: center;
+            transition: background-color 0.3s, box-shadow 0.3s, transform 0.3s;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+        }
+
+        body.dark-mode .demo-card {
+            background-color: var(--card-bg-dark);
+            box-shadow: 0 4px 6px rgba(0,0,0,0.3);
+        }
+
+        .demo-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 6px 12px rgba(0,0,0,0.15);
+        }
+
+        .demo-card h3 {
+            font-size: 1.4rem;
+            margin-bottom: 1rem;
+        }
+
+        .demo-card p {
+            font-size: 1rem;
+            margin-bottom: 1.5rem;
+            flex-grow: 1; /* Ocupa el espacio disponible */
+        }
+
+        /* --- BOTÓN DE ACCESO --- */
+        .cta-button {
+            background-color: var(--btn-bg-light);
+            color: var(--btn-text-light);
+            padding: 0.8rem 1.5rem;
+            border: none;
+            border-radius: 6px;
+            font-size: 1rem;
+            font-weight: 600;
+            text-decoration: none;
+            cursor: pointer;
+            transition: background-color 0.3s, transform 0.2s;
+            display: inline-block;
+        }
+
+        body.dark-mode .cta-button {
+            background-color: var(--btn-bg-dark);
+            color: var(--btn-text-dark);
+        }
+
+        .cta-button:hover {
+            background-color: #0056b3; /* Un tono más oscuro al hover en claro */
+            transform: translateY(-2px);
+        }
+        
+        body.dark-mode .cta-button:hover {
+             background-color: #9c67e0; /* Un tono más oscuro al hover en oscuro */
+        }
+
+        /* --- FOOTER --- */
+        footer {
+            text-align: center;
+            padding: 1rem;
+            font-size: 0.9rem;
+            opacity: 0.7;
+            border-top: 1px solid #eee;
+            transition: border-color 0.3s;
+        }
+        
+        body.dark-mode footer {
+             border-top-color: #333;
+        }
+
     </style>
 </head>
-<body>
+<body class="dark-mode"> <!-- CLASE 'dark-mode' AÑADIDA AQUÍ -->
 
-    <div class="menu">
-        <div class="categoria" onclick="seleccionarCategoria('Uñas')">Uñas</div>
-        <div class="categoria" onclick="seleccionarCategoria('Cabello')">Cabello</div>
-        <div class="categoria" onclick="seleccionarCategoria('Cejas')">Cejas</div>
-        <div class="categoria" onclick="seleccionarCategoria('Pestañas')">Pestañas</div>
-        <div class="categoria" onclick="seleccionarCategoria('Pies')">Pies</div>
-    </div>
-
-    <div id="calendario-container">
-        <h3>Seleccione su fecha</h3>
-        <input type="date" id="fecha-cita" onchange="cargarHorarios()">
-        <div id="horarios-container"></div>
-    </div>
-
-    <div id="formulario-reserva">
-        <h3>Sus datos</h3>
-        <input type="text" id="nombre" placeholder="Nombre" required>
-        <input type="text" id="apellido" placeholder="Apellido" required>
-        <input type="tel" id="telefono" placeholder="Teléfono" required>
-        <input type="text" id="direccion" placeholder="Dirección" required>
-        <button onclick="confirmarCita()">Confirmar Reserva</button>
-    </div>
-
-    <div id="modal-confirmacion">
-        <div class="modal-contenido">
-            <h3>¡Gracias por confiar en nosotros!</h3>
-            <p>Muy pronto le contactaremos para confirmar los detalles de su cita.</p>
-            <button onclick="location.reload()">Aceptar</button>
-        </div>
-    </div>
-
-    <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/12.16.0/firebase-app.js";
-        import { getFirestore, doc, getDoc, collection, addDoc, query, where, getDocs } from "https://www.gstatic.com/firebasejs/12.16.0/firebase-firestore.js";
-
-        const firebaseConfig = {
-            apiKey: "AIzaSyDCN2ah_fSjW385KgAb48W8Cd9PhFDOQJ0",
-            authDomain: "estilista-demo.firebaseapp.com",
-            projectId: "estilista-demo",
-            storageBucket: "estilista-demo.firebasestorage.app",
-            messagingSenderId: "652196958867",
-            appId: "1:652196958867:web:1c860102aa769ea6787366"
-        };
-
-        const db = getFirestore(initializeApp(firebaseConfig));
-        window.categoriaActual = "";
-        window.horaSeleccionada = "";
-
-        document.getElementById('fecha-cita').min = new Date().toLocaleDateString('en-CA', { timeZone: 'America/Caracas' });
+    <!-- HEADER -->
+    <header>
+        <h1>Mis Demos</h1>
         
-        window.seleccionarCategoria = (cat) => {
-            window.categoriaActual = cat;
-            document.getElementById('calendario-container').style.display = 'block';
-            document.getElementById('formulario-reserva').style.display = 'none';
-        };
+        <!-- BOTÓN DE CAMBIO DE TEMA (SOL/LUNA) -->
+        <button id="themeToggle" class="theme-toggle" aria-label="Cambiar tema">
+            <span class="sun-icon" aria-hidden="true">☀️</span>
+            <span class="moon-icon" aria-hidden="true">🌙</span>
+        </button>
+    </header>
 
-        window.cargarHorarios = async () => {
-            const inputFecha = document.getElementById('fecha-cita').value;
-            if (!inputFecha) return;
+    <!-- CONTENIDO PRINCIPAL -->
+    <main>
+        <div class="welcome-section">
+            <h2>Bienvenido</h2>
+            <p>Seleccione la demostración que desea visualizar.</p>
+        </div>
 
-            const dias = ["domingo", "lunes", "martes", "miercoles", "jueves", "viernes", "sabado"];
-            const fechaObj = new Date(inputFecha + 'T00:00:00');
-            const nombreDia = dias[fechaObj.getDay()];
-            const container = document.getElementById('horarios-container');
-            container.innerHTML = `Cargando...`;
+        <div class="demos-container">
+            <!-- TARJETA: UÑAS DEMO -->
+            <article class="demo-card">
+                <h3>Peluquería - Uñas</h3>
+                <p>Demostración interactiva para servicios de manicura y estética.</p>
+                <!-- ENLACE CON APERTURA EN NUEVA PESTAÑA -->
+                <a href="https://jonathanirigoyeninversiones-prog.github.io/demo/unas.demo.html" 
+                   target="_blank" 
+                   rel="noopener noreferrer" 
+                   class="cta-button">
+                    UÑAS DEMO
+                </a>
+            </article>
 
-            try {
-                const diaActivoSnap = await getDoc(doc(db, "dias_activos", nombreDia));
-                if (!diaActivoSnap.exists() || !diaActivoSnap.data().activo) {
-                    container.innerHTML = `<p>Lo sentimos, hoy no laboramos.</p>`;
-                    return;
-                }
+            <!-- Puedes añadir más tarjetas aquí en el futuro -->
+            <!--
+            <article class="demo-card">
+                <h3>Restaurante</h3>
+                <p>Demo de gestión de pedidos y menú digital.</p>
+                <a href="#" target="_blank" class="cta-button">RESTAURANTE DEMO</a>
+            </article>
+            -->
 
-                const horDoc = await getDoc(doc(db, "horarios", nombreDia));
-                const citasSnap = await getDocs(query(collection(db, "citas"), where("fecha", "==", inputFecha)));
-                const horasOcupadas = citasSnap.docs.map(doc => doc.data().hora);
+        </div>
+    </main>
 
-                if (horDoc.exists()) {
-                    const listaHoras = horDoc.data().lista;
-                    const formatter = new Intl.DateTimeFormat('es-VE', { timeZone: 'America/Caracas', hour: 'numeric', hour12: false });
-                    const horaActualVzla = parseInt(formatter.format(new Date()));
-                    const hoyVzla = new Date().toLocaleDateString('en-CA', { timeZone: 'America/Caracas' });
-                    const esHoy = (inputFecha === hoyVzla);
+    <!-- FOOTER -->
+    <footer>
+        &copy; 2023 Jonathan Irigoyen Inversiones. Todos los derechos reservados.
+    </footer>
 
-                    container.innerHTML = `<h4>Horarios para el ${nombreDia}:</h4>`;
-                    
-                    listaHoras.forEach(hora => {
-                        const horaNum = parseInt(hora.split(":")[0]);
-                        const estaOcupada = horasOcupadas.includes(hora);
-                        const haPasado = esHoy && (horaNum <= horaActualVzla);
-                        
-                        const disabled = (estaOcupada || haPasado) ? "disabled" : "";
-                        container.innerHTML += `<button class="hora-btn" ${disabled} onclick="abrirFormulario('${hora}')">${hora} ${estaOcupada ? '(Reservado)' : (haPasado ? '(Pasado)' : '')}</button>`;
-                    });
-                }
-            } catch (e) {
-                container.innerHTML = `<p>Error: ${e.message}</p>`;
-            }
-        };
+    <!-- SCRIPT PARA LA LÓGICA DEL TEMA (SOL/LUNA) -->
+    <script>
+        const body = document.body;
+        const themeToggle = document.getElementById('themeToggle');
 
-        window.abrirFormulario = (hora) => {
-            window.horaSeleccionada = hora;
-            document.getElementById('formulario-reserva').style.display = 'block';
-        };
+        // Función para cambiar el tema
+        function toggleTheme() {
+            body.classList.toggle('dark-mode');
+        }
 
-        window.confirmarCita = async () => {
-            const datos = {
-                nombre: document.getElementById('nombre').value,
-                apellido: document.getElementById('apellido').value,
-                telefono: document.getElementById('telefono').value,
-                direccion: document.getElementById('direccion').value,
-                categoria: window.categoriaActual,
-                fecha: document.getElementById('fecha-cita').value,
-                hora: window.horaSeleccionada
-            };
-
-            try {
-                await addDoc(collection(db, "citas"), datos);
-                document.getElementById('modal-confirmacion').style.display = 'flex';
-            } catch (e) {
-                alert("Error al guardar: " + e.message);
-            }
-        };
+        // Evento click para el botón
+        themeToggle.addEventListener('click', toggleTheme);
     </script>
+
 </body>
 </html>
