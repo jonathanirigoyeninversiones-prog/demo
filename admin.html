@@ -2,12 +2,12 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <title>222 Admin Login</title>
+    <title>Panel Seguro</title>
 </head>
 <body>
     <div id="login-form">
-        <input type="text" id="user" placeholder="Usuario">
-        <input type="password" id="pass" placeholder="Clave">
+        <input type="email" id="email" placeholder="Correo electrónico">
+        <input type="password" id="pass" placeholder="Contraseña">
         <button onclick="login()">Entrar</button>
     </div>
     <div id="panel" style="display:none;">
@@ -17,7 +17,8 @@
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/12.16.0/firebase-app.js";
-        import { getFirestore, doc, getDoc, collection, getDocs } from "https://www.gstatic.com/firebasejs/12.16.0/firebase-firestore.js";
+        import { getAuth, signInWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/12.16.0/firebase-auth.js";
+        import { getFirestore, collection, getDocs } from "https://www.gstatic.com/firebasejs/12.16.0/firebase-firestore.js";
 
         const firebaseConfig = {
             apiKey: "AIzaSyDCN2ah_fSjW385KgAb48W8Cd9PhFDOQJ0",
@@ -25,39 +26,34 @@
             projectId: "estilista-demo",
             storageBucket: "estilista-demo.firebasestorage.app",
             messagingSenderId: "652196958867",
-            appId: "1:652196958867:web:1c860102aa769ea6787366",
-            measurementId: "G-DTB0D8XRWK"
+            appId: "1:652196958867:web:1c860102aa769ea6787366"
         };
 
-        const db = getFirestore(initializeApp(firebaseConfig));
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getFirestore(app);
 
         window.login = async () => {
-            const u = document.getElementById('user').value;
-            const p = document.getElementById('pass').value;
-            
+            const email = document.getElementById('email').value;
+            const pass = document.getElementById('pass').value;
             try {
-                const docSnap = await getDoc(doc(db, "credenciales", "admin"));
-                if (docSnap.exists()) {
-                    const data = docSnap.data();
-                    if (data.usuario === u && data.clave === p) {
-                        document.getElementById('login-form').style.display = 'none';
-                        document.getElementById('panel').style.display = 'block';
-                        
-                        // Cargar citas
-                        const snap = await getDocs(collection(db, "citas"));
-                        const container = document.getElementById('citas-container');
-                        snap.forEach(d => {
-                            const c = d.data();
-                            container.innerHTML += `<li>${c.nombre} ${c.apellido} - Dir: ${c.direccion}</li>`;
-                        });
-                    } else {
-                        alert("Usuario o clave incorrectos");
-                    }
-                }
+                await signInWithEmailAndPassword(auth, email, pass);
+                document.getElementById('login-form').style.display = 'none';
+                document.getElementById('panel').style.display = 'block';
+                cargarCitas();
             } catch (e) {
                 alert("Error: " + e.message);
             }
         };
+
+        async function cargarCitas() {
+            const snap = await getDocs(collection(db, "citas"));
+            const container = document.getElementById('citas-container');
+            snap.forEach(d => {
+                const c = d.data();
+                container.innerHTML += `<li>${c.nombre} - ${c.direccion}</li>`;
+            });
+        }
     </script>
 </body>
 </html>
