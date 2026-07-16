@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <title>Panel de Administración</title>
+    <title>11 Panel de Administración</title>
     <style>
         body { font-family: sans-serif; padding: 20px; }
         table { width: 100%; border-collapse: collapse; margin-top: 20px; }
@@ -18,7 +18,7 @@
         <h3>Acceso Administrativo</h3>
         <input type="email" id="user" placeholder="Correo electrónico">
         <input type="password" id="pass" placeholder="Contraseña">
-        <button onclick="iniciarSesion()">Entrar</button>
+        <button id="btn-entrar">Entrar</button>
     </div>
 
     <div id="admin-panel" style="display:none;">
@@ -37,12 +37,21 @@
         import { getAuth, signInWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/12.16.0/firebase-auth.js";
         import { getFirestore, collection, getDocs } from "https://www.gstatic.com/firebasejs/12.16.0/firebase-firestore.js";
 
-        const firebaseConfig = { /* PEGA TU CONFIGURACIÓN AQUÍ */ };
+        const firebaseConfig = {
+            apiKey: "AIzaSyDCN2ah_fSjW385KgAb48W8Cd9PhFDOQJ0",
+            authDomain: "estilista-demo.firebaseapp.com",
+            projectId: "estilista-demo",
+            storageBucket: "estilista-demo.firebasestorage.app",
+            messagingSenderId: "652196958867",
+            appId: "1:652196958867:web:1c860102aa769ea6787366"
+        };
+
         const app = initializeApp(firebaseConfig);
         const auth = getAuth(app);
         const db = getFirestore(app);
 
-        window.iniciarSesion = async () => {
+        // MANEJADOR DE EVENTO PARA EVITAR EL ERROR DE "is not defined"
+        document.getElementById('btn-entrar').addEventListener('click', async () => {
             const email = document.getElementById('user').value;
             const pass = document.getElementById('pass').value;
 
@@ -52,24 +61,28 @@
                 document.getElementById('admin-panel').style.display = 'block';
                 cargarCitas();
             } catch (e) {
-                alert("Error: " + e.message);
+                alert("Error al iniciar: " + e.message);
             }
-        };
+        });
 
         async function cargarCitas() {
-            const querySnapshot = await getDocs(collection(db, "citas"));
-            const tbody = document.getElementById('lista-citas');
-            tbody.innerHTML = "";
-            querySnapshot.forEach((doc) => {
-                const c = doc.data();
-                tbody.innerHTML += `<tr>
-                    <td>${c.nombre || ''} ${c.apellido || ''}</td>
-                    <td>${c.fecha || ''} - ${c.hora || ''}</td>
-                    <td>${c.telefono || ''}</td>
-                    <td>${c.direccion || ''}</td>
-                    <td>${c.categoria || ''}</td>
-                </tr>`;
-            });
+            try {
+                const querySnapshot = await getDocs(collection(db, "citas"));
+                const tbody = document.getElementById('lista-citas');
+                tbody.innerHTML = "";
+                querySnapshot.forEach((doc) => {
+                    const c = doc.data();
+                    tbody.innerHTML += `<tr>
+                        <td>${c.nombre || ''} ${c.apellido || ''}</td>
+                        <td>${c.fecha || ''} - ${c.hora || ''}</td>
+                        <td>${c.telefono || ''}</td>
+                        <td>${c.direccion || ''}</td>
+                        <td>${c.categoria || ''}</td>
+                    </tr>`;
+                });
+            } catch (e) {
+                alert("Error al cargar citas: " + e.message);
+            }
         }
     </script>
 </body>
