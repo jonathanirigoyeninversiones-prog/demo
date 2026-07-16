@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <title>Reserva tu cita</title>
+    <title>111 Reserva tu cita</title>
     <style>
         .menu { display: flex; gap: 15px; background: #f4f4f4; padding: 10px; }
         .categoria { cursor: pointer; color: blue; text-decoration: underline; }
@@ -24,6 +24,7 @@
 
     <div id="calendario-container">
         <h3>Selecciona una fecha:</h3>
+        <!-- Se agregó el atributo 'min' para bloquear días pasados -->
         <input type="date" id="fecha-cita" onchange="cargarHorarios()">
         <div id="horarios-container"></div>
     </div>
@@ -53,6 +54,9 @@
         const db = getFirestore(initializeApp(firebaseConfig));
         window.categoriaActual = "";
         window.horaSeleccionada = "";
+
+        // Configuración inicial para bloquear fechas pasadas en el calendario
+        document.getElementById('fecha-cita').min = new Date().toISOString().split("T")[0];
         
         window.seleccionarCategoria = (cat) => {
             window.categoriaActual = cat;
