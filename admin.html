@@ -2,49 +2,46 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <title>Panel de Administración</title>
+    <title>11 Admin Login</title>
 </head>
 <body>
-    <h1>Panel de Control del Administrador</h1>
-    <div id="lista-citas">
-        <!-- Aquí cargaremos todas las citas desde Firebase -->
-        <h2>Citas registradas:</h2>
+    <div id="login-form">
+        <input type="text" id="user" placeholder="Usuario">
+        <input type="password" id="pass" placeholder="Clave">
+        <button onclick="login()">Entrar</button>
+    </div>
+    <div id="panel" style="display:none;">
+        <h1>Historial de Citas</h1>
         <ul id="citas-container"></ul>
     </div>
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/12.16.0/firebase-app.js";
-        import { getFirestore, collection, getDocs, deleteDoc, doc } from "https://www.gstatic.com/firebasejs/12.16.0/firebase-firestore.js";
+        import { getFirestore, collection, getDocs, doc, getDoc } from "https://www.gstatic.com/firebasejs/12.16.0/firebase-firestore.js";
 
-        const firebaseConfig = {
-            apiKey: "AIzaSyDCN2ah_fSjW385KgAb48W8Cd9PhFDOQJ0",
-            authDomain: "estilista-demo.firebaseapp.com",
-            projectId: "estilista-demo",
-            storageBucket: "estilista-demo.firebasestorage.app",
-            messagingSenderId: "652196958867",
-            appId: "1:652196958867:web:1c860102aa769ea6787366",
-            measurementId: "G-DTB0D8XRWK"
-        };
-
+        const firebaseConfig = { /* PEGA AQUÍ TU CONFIGuración ANTERIOR */ };
         const db = getFirestore(initializeApp(firebaseConfig));
 
-        async function cargarCitas() {
-            const querySnapshot = await getDocs(collection(db, "citas"));
-            const container = document.getElementById('citas-container');
-            container.innerHTML = "";
-            querySnapshot.forEach((doc) => {
-                const data = doc.data();
-                container.innerHTML += `<li>${data.nombre} ${data.apellido} - ${data.telefono} 
-                                        <button onclick="eliminarCita('${doc.id}')">Eliminar</button></li>`;
-            });
-        }
-
-        window.eliminarCita = async (id) => {
-            await deleteDoc(doc(db, "citas", id));
-            cargarCitas(); // Recargar la lista
+        window.login = async () => {
+            const u = document.getElementById('user').value;
+            const p = document.getElementById('pass').value;
+            const cred = await getDoc(doc(db, "credenciales", "admin"));
+            
+            if(cred.exists() && cred.data().usuario === u && cred.data().clave === p) {
+                document.getElementById('login-form').style.display = 'none';
+                document.getElementById('panel').style.display = 'block';
+                cargarCitas();
+            } else { alert("Usuario o clave incorrecta"); }
         };
 
-        cargarCitas();
+        async function cargarCitas() {
+            const snap = await getDocs(collection(db, "citas"));
+            const container = document.getElementById('citas-container');
+            snap.forEach(d => {
+                const data = d.data();
+                container.innerHTML += `<li>${data.nombre} ${data.apellido} - Tel: ${data.telefono} - <strong>Dir: ${data.direccion}</strong></li>`;
+            });
+        }
     </script>
 </body>
 </html>
