@@ -1,1 +1,50 @@
-<h1>Hola, esta es la web de la estilista</h1>.
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Panel de Administración</title>
+</head>
+<body>
+    <h1>Panel de Control del Administrador</h1>
+    <div id="lista-citas">
+        <!-- Aquí cargaremos todas las citas desde Firebase -->
+        <h2>Citas registradas:</h2>
+        <ul id="citas-container"></ul>
+    </div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/12.16.0/firebase-app.js";
+        import { getFirestore, collection, getDocs, deleteDoc, doc } from "https://www.gstatic.com/firebasejs/12.16.0/firebase-firestore.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyDCN2ah_fSjW385KgAb48W8Cd9PhFDOQJ0",
+            authDomain: "estilista-demo.firebaseapp.com",
+            projectId: "estilista-demo",
+            storageBucket: "estilista-demo.firebasestorage.app",
+            messagingSenderId: "652196958867",
+            appId: "1:652196958867:web:1c860102aa769ea6787366",
+            measurementId: "G-DTB0D8XRWK"
+        };
+
+        const db = getFirestore(initializeApp(firebaseConfig));
+
+        async function cargarCitas() {
+            const querySnapshot = await getDocs(collection(db, "citas"));
+            const container = document.getElementById('citas-container');
+            container.innerHTML = "";
+            querySnapshot.forEach((doc) => {
+                const data = doc.data();
+                container.innerHTML += `<li>${data.nombre} ${data.apellido} - ${data.telefono} 
+                                        <button onclick="eliminarCita('${doc.id}')">Eliminar</button></li>`;
+            });
+        }
+
+        window.eliminarCita = async (id) => {
+            await deleteDoc(doc(db, "citas", id));
+            cargarCitas(); // Recargar la lista
+        };
+
+        cargarCitas();
+    </script>
+</body>
+</html>
