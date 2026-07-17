@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <title>1111 Panel Administrativo</title>
+    <title>Panel Administrativo</title>
     <style>
         body { font-family: sans-serif; padding: 20px; }
         .tab { display: none; padding: 20px; border: 1px solid #ddd; }
@@ -13,15 +13,31 @@
 </head>
 <body>
     <div id="admin-panel">
-        <button onclick="cargarDatos()">CARGAR Y DEPURAR DATOS</button>
+        <h1>Gestión de Estructura</h1>
         <div id="lista-categorias"></div>
     </div>
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/12.16.0/firebase-app.js";
-        import { getFirestore, collection, getDocs } from "https://www.gstatic.com/firebasejs/12.16.0/firebase-firestore.js";
+        import { getFirestore, collection, getDocs, doc, deleteDoc, updateDoc } from "https://www.gstatic.com/firebasejs/12.16.0/firebase-firestore.js";
         
         const db = getFirestore(initializeApp({apiKey: "AIzaSyDCN2ah_fSjW385KgAb48W8Cd9PhFDOQJ0", authDomain: "estilista-demo.firebaseapp.com", projectId: "estilista-demo", storageBucket: "estilista-demo.firebasestorage.app", messagingSenderId: "652196958867", appId: "1:652196958867:web:1c860102aa769ea6787366"}));
         
+        // Funciones de acción
+        window.eliminarServicio = async (id) => {
+            if(confirm("¿Seguro que quieres eliminar este servicio?")) {
+                await deleteDoc(doc(db, "servicios", id));
+                cargarDatos();
+            }
+        };
+
+        window.modificarServicio = async (id) => {
+            const nuevoNombre = prompt("Introduce el nuevo nombre del servicio:");
+            if(nuevoNombre) {
+                await updateDoc(doc(db, "servicios", id), { nombre: nuevoNombre });
+                cargarDatos();
+            }
+        };
+
         window.cargarDatos = async () => {
             const divCat = document.getElementById('lista-categorias');
             divCat.innerHTML = "Cargando...";
@@ -29,28 +45,26 @@
             const cats = await getDocs(collection(db, "categorias"));
             const servs = await getDocs(collection(db, "servicios"));
             
-            console.log("Total categorías:", cats.size);
-            console.log("Total servicios:", servs.size);
-            
             divCat.innerHTML = "";
             cats.forEach(catDoc => {
                 let catNombre = catDoc.data().nombre;
-                console.log("Procesando categoría:", catNombre);
-                
                 let html = `<div class="cat-box"><strong>Categoría: ${catNombre}</strong>`;
                 
                 servs.forEach(s => {
-                    let sData = s.data();
-                    console.log("Comparando servicio:", sData.nombre, "con categoria:", sData.categoria);
-                    
-                    if (sData.categoria === catNombre) {
-                        html += `<div class="sub-item"><span>${sData.nombre}</span> 
-                        <button>Modificar</button><button>Eliminar</button></div>`;
+                    if (s.data().categoria === catNombre) {
+                        html += `<div class="sub-item"><span>${s.data().nombre}</span> 
+                        <div>
+                            <button onclick="modificarServicio('${s.id}')">Modificar</button>
+                            <button onclick="eliminarServicio('${s.id}')">Eliminar</button>
+                        </div></div>`;
                     }
                 });
                 divCat.innerHTML += html + `</div>`;
             });
         };
+
+        // Carga inicial
+        cargarDatos();
     </script>
 </body>
 </html>
