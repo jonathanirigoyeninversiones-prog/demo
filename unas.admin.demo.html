@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <title>Panel Administrativo</title>
+    <title>ccc Panel Administrativo</title>
     <style>
         body { font-family: sans-serif; padding: 20px; }
         #login-box { display: flex; flex-direction: column; align-items: center; justify-content: center; height: 80vh; }
@@ -13,6 +13,7 @@
         th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
         .confirmado { background-color: #d4edda !important; }
         .cat-box { border: 1px solid #333; padding: 10px; margin-top: 10px; border-radius: 5px; }
+        .cat-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
         .sub-item { display: flex; justify-content: space-between; padding: 5px; border-bottom: 1px solid #eee; background: #f9f9f9; }
     </style>
 </head>
@@ -35,6 +36,7 @@
         
         <div id="tab-modificar" class="tab">
             <h1>Gestión de Estructura</h1>
+            <button onclick="agregarCategoria()">+ Agregar Nueva Categoría</button>
             <div id="lista-categorias"></div>
         </div>
     </div>
@@ -52,22 +54,19 @@
         };
 
         window.confirmarCita = async (id) => { await updateDoc(doc(db, "citas", id), { confirmado: true }); cargarDatos(); };
-
         window.gestionarCita = async (id, destino) => {
             const snap = await getDocs(collection(db, "citas"));
             const cita = snap.docs.find(d => d.id === id);
-            if(cita) {
-                await addDoc(collection(db, destino), cita.data());
-                await deleteDoc(doc(db, "citas", id));
-            }
+            if(cita) { await addDoc(collection(db, destino), cita.data()); await deleteDoc(doc(db, "citas", id)); }
             cargarDatos();
         };
 
         window.eliminarServicio = async (id) => { await deleteDoc(doc(db, "servicios", id)); cargarDatos(); };
-        window.modificarServicio = async (id) => {
-            const nuevo = prompt("Nuevo nombre:");
-            if(nuevo) { await updateDoc(doc(db, "servicios", id), { nombre: nuevo }); cargarDatos(); }
-        };
+        window.modificarServicio = async (id) => { const n = prompt("Nuevo nombre:"); if(n) { await updateDoc(doc(db, "servicios", id), { nombre: n }); cargarDatos(); } };
+        
+        window.agregarCategoria = async () => { const n = prompt("Nombre de la nueva categoría:"); if(n) { await addDoc(collection(db, "categorias"), { nombre: n }); cargarDatos(); } };
+        window.eliminarCategoria = async (id) => { await deleteDoc(doc(db, "categorias", id)); cargarDatos(); };
+        window.modificarCategoria = async (id) => { const n = prompt("Nuevo nombre:"); if(n) { await updateDoc(doc(db, "categorias", id), { nombre: n }); cargarDatos(); } };
 
         window.cargarDatos = async () => {
             const tbody = document.getElementById('lista-citas');
@@ -85,7 +84,9 @@
             const cats = await getDocs(collection(db, "categorias"));
             const servs = await getDocs(collection(db, "servicios"));
             cats.forEach(cat => {
-                let html = `<div class="cat-box"><strong>${cat.data().nombre}</strong>`;
+                let html = `<div class="cat-box"><div class="cat-header"><strong>${cat.data().nombre}</strong>
+                <div><button onclick="modificarCategoria('${cat.id}')">Editar Cat</button>
+                <button onclick="eliminarCategoria('${cat.id}')">Eliminar Cat</button></div></div>`;
                 servs.forEach(s => { 
                     if (s.data().categoria === cat.data().nombre) {
                         html += `<div class="sub-item"><span>${s.data().nombre}</span>
