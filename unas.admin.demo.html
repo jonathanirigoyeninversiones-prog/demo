@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <title>zzz Panel Administrativo</title>
+    <title>111 Panel Administrativo</title>
     <style>
         body { font-family: sans-serif; padding: 20px; }
         .tab { display: none; padding: 20px; border: 1px solid #ddd; }
@@ -20,6 +20,7 @@
         <button onclick="mostrarTab('tab-clientes')">Clientes</button>
         <button onclick="mostrarTab('tab-modificar')">Modificar</button>
         <div id="tab-clientes" class="tab active">
+            <button onclick="cargarDatos()">Refrescar Tabla</button>
             <table><thead><tr><th>Fecha</th><th>Nombre</th><th>Tel</th><th>Dir</th><th>Servicio</th><th>Acciones</th></tr></thead><tbody id="lista-citas"></tbody></table>
         </div>
         <div id="tab-modificar" class="tab">
@@ -64,6 +65,9 @@
             });
         };
         
+        // Configuración de actualización automática cada 30 segundos
+        setInterval(cargarDatos, 30000);
+        
         window.gestionar = async (id, col) => {
             const snap = await getDocs(collection(db, "citas"));
             const data = snap.docs.find(d => d.id === id).data();
@@ -81,3 +85,4 @@
     </script>
 </body>
 </html>
+```[cite: 2]
