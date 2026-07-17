@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <title>Panel Administrativo</title>
+    <title>222 Panel Administrativo</title>
     <style>
         body { font-family: sans-serif; padding: 20px; }
         #login-box { display: flex; flex-direction: column; align-items: center; justify-content: center; height: 80vh; }
@@ -38,6 +38,11 @@
         <div id="tab-modificar" class="tab">
             <h1>Gestión de Estructura</h1>
             <div class="horario-box">
+                <h3>Configuración Peluquería</h3>
+                <div>
+                    Número de WhatsApp: <input type="text" id="input-wpp" placeholder="Ej: 584121234567">
+                    <button onclick="guardarWpp()">Aceptar</button>
+                </div>
                 <h3>Horarios de Atención</h3>
                 <div id="lista-horarios"></div>
             </div>
@@ -56,6 +61,12 @@
         window.mostrarTab = (id) => {
             document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
             document.getElementById(id).classList.add('active');
+        };
+
+        window.guardarWpp = async () => {
+            const numero = document.getElementById('input-wpp').value;
+            await setDoc(doc(db, "configuracion", "whatsapp"), { numero: numero });
+            alert("Número guardado");
         };
 
         window.toggleDia = async (dia) => {
@@ -102,6 +113,9 @@
             const divHor = document.getElementById('lista-horarios');
             tbody.innerHTML = ""; divCat.innerHTML = ""; divHor.innerHTML = "";
             
+            const snapWpp = await getDoc(doc(db, "configuracion", "whatsapp"));
+            if(snapWpp.exists()) document.getElementById('input-wpp').value = snapWpp.data().numero;
+
             const dias = ["Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado", "Domingo"];
             for(let d of dias) {
                 const snap = await getDoc(doc(db, "configuracion", d));
@@ -113,12 +127,8 @@
             (await getDocs(collection(db, "citas"))).forEach(d => {
                 const c = d.data();
                 tbody.innerHTML += `<tr class="${c.confirmado ? 'confirmado' : ''}">
-                <td>${c.fecha || ''}</td>
-                <td>${c.nombre || ''}</td>
-                <td>${c.apellido || ''}</td>
-                <td>${c.telefono || ''}</td>
-                <td>${c.direccion || ''}</td>
-                <td>${c.subcategoria || ''}</td>
+                <td>${c.fecha || ''}</td><td>${c.nombre || ''}</td><td>${c.apellido || ''}</td><td>${c.telefono || ''}</td>
+                <td>${c.direccion || ''}</td><td>${c.subcategoria || ''}</td>
                 <td><button onclick="confirmarCita('${d.id}')">Confirmar</button>
                 <button onclick="gestionarCita('${d.id}', 'listo')">Listo</button>
                 <button onclick="gestionarCita('${d.id}', 'cancelar')">Cancelar</button></td></tr>`;
