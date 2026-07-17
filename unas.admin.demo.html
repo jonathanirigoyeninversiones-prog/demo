@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <title>Panel Administrativo Pro</title>
+    <title>zzz Panel Administrativo Pro</title>
     <style>
         body { font-family: sans-serif; padding: 20px; }
         .tab { display: none; padding: 20px; border: 1px solid #ddd; }
@@ -41,8 +41,8 @@
                         <th>Nombre</th>
                         <th>Apellido</th>
                         <th>Teléfono</th>
-                        <th>Dirección</th>
                         <th>Categoría</th>
+                        <th>Subcategoría</th>
                     </tr>
                 </thead>
                 <tbody id="lista-citas"></tbody>
@@ -89,11 +89,8 @@
         window.guardarHoraCierre = async () => {
             const hora = document.getElementById('hora-cierre-input').value;
             if (hora) {
-                // Guarda la hora en formato militar (HH:MM) en la colección config, documento horario[cite: 3]
                 await setDoc(doc(db, "config", "horario"), { cierre: hora });
                 alert("Hora de cierre guardada: " + hora);
-            } else {
-                alert("Por favor seleccione una hora válida.");
             }
         };
 
@@ -119,8 +116,8 @@
                     <td>${c.nombre}</td>
                     <td>${c.apellido}</td>
                     <td>${c.telefono}</td>
-                    <td>${c.direccion}</td>
-                    <td>${c.categoria}</td>
+                    <td>${c.categoria || ""}</td>
+                    <td>${c.subcategoria || ""}</td>
                 </tr>`;
             });
 
