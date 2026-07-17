@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <title>cccc Panel Administrativo Pro</title>
+    <title>Panel Administrativo Pro</title>
     <style>
         body { font-family: sans-serif; padding: 20px; }
         .tab { display: none; padding: 20px; border: 1px solid #ddd; }
@@ -35,6 +35,10 @@
         </div>
 
         <div id="tab-modificar" class="tab">
+            <h1>Gestión de Horario</h1>
+            <input type="time" id="hora-cierre-input">
+            <button onclick="guardarHoraCierre()">Guardar Hora Cierre</button>
+            
             <h1>Gestión de Días Laborales</h1>
             <div id="lista-dias" style="margin-bottom: 30px;">Cargando días...</div>
             
@@ -67,13 +71,27 @@
             document.getElementById(id).classList.add('active');
         };
 
-        // Función para cambiar estado de días
+        window.guardarHoraCierre = async () => {
+            const hora = document.getElementById('hora-cierre-input').value;
+            await setDoc(doc(db, "config", "horario"), { cierre: hora });
+            alert("Hora de cierre guardada: " + hora);
+        };
+
         window.toggleDia = async (dia, estadoActual) => {
             await setDoc(doc(db, "dias_activos", dia), { activo: !estadoActual });
             cargarDatos();
         };
 
         async function cargarDatos() {
+            // Cargar Citas
+            const citasSnap = await getDocs(collection(db, "citas"));
+            const divCitas = document.getElementById('lista-citas');
+            divCitas.innerHTML = "";
+            citasSnap.forEach(doc => {
+                const c = doc.data();
+                divCitas.innerHTML += `<p>${c.fecha} - ${c.nombre} ${c.apellido} (${c.telefono})</p>`;
+            });
+
             // Cargar días
             const diasSemana = ["lunes", "martes", "miercoles", "jueves", "viernes", "sabado", "domingo"];
             const divDias = document.getElementById('lista-dias');
@@ -87,7 +105,7 @@
                 </div>`;
             }
 
-            // Cargar categorías (código existente)
+            // Cargar categorías
             const catSnap = await getDocs(collection(db, "categorias"));
             const servSnap = await getDocs(collection(db, "servicios"));
             const div = document.getElementById('lista-categorias');
