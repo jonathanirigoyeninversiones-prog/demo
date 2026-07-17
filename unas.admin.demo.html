@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <title>ccc Panel Administrativo</title>
+    <title>Panel Administrativo</title>
     <style>
         body { font-family: sans-serif; padding: 20px; }
         #login-box { display: flex; flex-direction: column; align-items: center; justify-content: center; height: 80vh; }
@@ -44,7 +44,7 @@
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/12.16.0/firebase-app.js";
         import { getAuth, signInWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/12.16.0/firebase-auth.js";
-        import { getFirestore, collection, getDocs, doc, deleteDoc, addDoc, updateDoc } from "https://www.gstatic.com/firebasejs/12.16.0/firebase-firestore.js";
+        import { getFirestore, collection, getDocs, doc, deleteDoc, addDoc, updateDoc, query, where } from "https://www.gstatic.com/firebasejs/12.16.0/firebase-firestore.js";
         
         const db = getFirestore(initializeApp({apiKey: "AIzaSyDCN2ah_fSjW385KgAb48W8Cd9PhFDOQJ0", authDomain: "estilista-demo.firebaseapp.com", projectId: "estilista-demo", storageBucket: "estilista-demo.firebasestorage.app", messagingSenderId: "652196958867", appId: "1:652196958867:web:1c860102aa769ea6787366"}));
         
@@ -66,7 +66,17 @@
         
         window.agregarCategoria = async () => { const n = prompt("Nombre de la nueva categoría:"); if(n) { await addDoc(collection(db, "categorias"), { nombre: n }); cargarDatos(); } };
         window.eliminarCategoria = async (id) => { await deleteDoc(doc(db, "categorias", id)); cargarDatos(); };
-        window.modificarCategoria = async (id) => { const n = prompt("Nuevo nombre:"); if(n) { await updateDoc(doc(db, "categorias", id), { nombre: n }); cargarDatos(); } };
+        
+        window.modificarCategoria = async (id, nombreAntiguo) => {
+            const nuevo = prompt("Nuevo nombre para la categoría:", nombreAntiguo);
+            if(nuevo && nuevo !== nombreAntiguo) {
+                await updateDoc(doc(db, "categorias", id), { nombre: nuevo });
+                const q = query(collection(db, "servicios"), where("categoria", "==", nombreAntiguo));
+                const snap = await getDocs(q);
+                snap.forEach(async (s) => { await updateDoc(doc(db, "servicios", s.id), { categoria: nuevo }); });
+                cargarDatos();
+            }
+        };
 
         window.cargarDatos = async () => {
             const tbody = document.getElementById('lista-citas');
@@ -84,11 +94,12 @@
             const cats = await getDocs(collection(db, "categorias"));
             const servs = await getDocs(collection(db, "servicios"));
             cats.forEach(cat => {
-                let html = `<div class="cat-box"><div class="cat-header"><strong>${cat.data().nombre}</strong>
-                <div><button onclick="modificarCategoria('${cat.id}')">Editar Cat</button>
+                let catNombre = cat.data().nombre;
+                let html = `<div class="cat-box"><div class="cat-header"><strong>${catNombre}</strong>
+                <div><button onclick="modificarCategoria('${cat.id}', '${catNombre}')">Editar Cat</button>
                 <button onclick="eliminarCategoria('${cat.id}')">Eliminar Cat</button></div></div>`;
                 servs.forEach(s => { 
-                    if (s.data().categoria === cat.data().nombre) {
+                    if (s.data().categoria === catNombre) {
                         html += `<div class="sub-item"><span>${s.data().nombre}</span>
                         <div><button onclick="modificarServicio('${s.id}')">Editar</button>
                         <button onclick="eliminarServicio('${s.id}')">Eliminar</button></div></div>`;
