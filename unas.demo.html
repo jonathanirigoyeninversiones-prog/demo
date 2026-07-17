@@ -2,9 +2,9 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <title>111 Reserva de Citas - Salon Beauty</title>
+    <title>zzz Reserva de Citas - Salon Beauty</title>
     <style>
-        body { background-image: url('fondo-unas.png'); background-size: cover; background-position: center; min-height: 100vh; margin: 0; font-family: sans-serif; }
+        body { background-size: cover; background-position: center; min-height: 100vh; margin: 0; font-family: sans-serif; }
         .container { background: rgba(255, 255, 255, 0.95); padding: 30px; border-radius: 15px; max-width: 600px; margin: 40px auto; }
         .btn-cat, .btn-sub { padding: 10px; margin: 5px; cursor: pointer; border: 1px solid #d4af37; background: #fff; border-radius: 5px; }
         .btn-cat:hover, .btn-sub:hover { background: #d4af37; color: #fff; }
@@ -14,110 +14,55 @@
     </style>
 </head>
 <body>
-
     <div class="container">
         <h3>Reserva tu cita</h3>
         <input type="date" id="fecha-cita" onchange="validarDia()">
         <div id="msg-dia"></div>
         <div id="categorias-container" style="display:none; margin-top: 20px;"></div>
         <div id="subcategorias-container" style="display:none; margin-top: 20px;"></div>
-        
         <div id="formulario-reserva" style="display:none; margin-top: 20px;">
             <input type="text" id="nombre" placeholder="Nombre">
             <input type="text" id="apellido" placeholder="Apellido">
             <input type="tel" id="telefono" placeholder="Teléfono">
+            <input type="text" id="direccion" placeholder="Dirección">
             <button onclick="confirmarCita()">Confirmar Reserva</button>
         </div>
     </div>
-
     <div id="modal-confirmacion">
         <div class="modal-contenido">
             <h3>Gracias por confiar en nosotros</h3>
-            <p>Pronto nos pondremos en contacto para confirmar la cita.</p>
+            <p>Pronto nos pondremos en contacto.</p>
             <button onclick="location.reload()">Aceptar</button>
         </div>
     </div>
-
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/12.16.0/firebase-app.js";
         import { getFirestore, doc, getDoc, collection, getDocs, addDoc } from "https://www.gstatic.com/firebasejs/12.16.0/firebase-firestore.js";
-
-        const firebaseConfig = {
-            apiKey: "AIzaSyDCN2ah_fSjW385KgAb48W8Cd9PhFDOQJ0",
-            authDomain: "estilista-demo.firebaseapp.com",
-            projectId: "estilista-demo",
-            storageBucket: "estilista-demo.firebasestorage.app",
-            messagingSenderId: "652196958867",
-            appId: "1:652196958867:web:1c860102aa769ea6787366"
-        };
-        const db = getFirestore(initializeApp(firebaseConfig));
-        window.selCat = ""; window.selSub = "";
-
-        // Establecer fecha mínima como hoy
-        document.getElementById('fecha-cita').min = new Date().toISOString().split('T')[0];
-
+        const db = getFirestore(initializeApp({apiKey: "AIzaSyDCN2ah_fSjW385KgAb48W8Cd9PhFDOQJ0", authDomain: "estilista-demo.firebaseapp.com", projectId: "estilista-demo", storageBucket: "estilista-demo.firebasestorage.app", messagingSenderId: "652196958867", appId: "1:652196958867:web:1c860102aa769ea6787366"}));
+        
         window.validarDia = async () => {
             const fechaVal = document.getElementById('fecha-cita').value;
-            if(!fechaVal) return;
-            
-            // Convertir fecha a nombre de día en español
             const dias = ["domingo", "lunes", "martes", "miercoles", "jueves", "viernes", "sabado"];
             const diaNombre = dias[new Date(fechaVal + 'T00:00:00').getDay()];
-            
-            try {
-                const snap = await getDoc(doc(db, "dias_activos", diaNombre));
-                // Si el documento existe y activo es true, permitir; de lo contrario bloquear
-                if (snap.exists() && snap.data().activo === true) {
-                    document.getElementById('msg-dia').innerHTML = "Día disponible.";
-                    cargarCategorias();
-                } else {
-                    document.getElementById('msg-dia').innerHTML = "Día no disponible para reservas.";
-                    document.getElementById('categorias-container').style.display = "none";
-                    document.getElementById('subcategorias-container').style.display = "none";
-                    document.getElementById('formulario-reserva').style.display = "none";
-                }
-            } catch (e) { console.error(e); alert("Error al verificar disponibilidad."); }
+            const snap = await getDoc(doc(db, "dias_activos", diaNombre));
+            if (snap.exists() && snap.data().activo) {
+                document.getElementById('msg-dia').innerHTML = "Día disponible.";
+                const container = document.getElementById('categorias-container');
+                container.style.display = "block";
+                container.innerHTML = "<strong>Seleccione categoría:</strong><br>";
+                (await getDocs(collection(db, "categorias"))).forEach(d => container.innerHTML += `<button class="btn-cat" onclick="window.cargarSubs('${d.data().nombre}')">${d.data().nombre}</button>`);
+            }
         };
-
-        async function cargarCategorias() {
-            const container = document.getElementById('categorias-container');
-            container.style.display = "block";
-            container.innerHTML = "<strong>Seleccione categoría:</strong><br>";
-            const snaps = await getDocs(collection(db, "categorias"));
-            snaps.forEach(doc => {
-                const nombre = doc.data().nombre;
-                container.innerHTML += `<button class="btn-cat" onclick="cargarSubs('${nombre}')">${nombre}</button>`;
-            });
-        }
-
         window.cargarSubs = async (cat) => {
             window.selCat = cat;
             const container = document.getElementById('subcategorias-container');
             container.style.display = "block";
             container.innerHTML = "<strong>Seleccione servicio:</strong><br>";
-            const snaps = await getDocs(collection(db, "servicios"));
-            snaps.forEach(doc => {
-                const data = doc.data();
-                if(data.categoria === cat) {
-                    container.innerHTML += `<button class="btn-sub" onclick="prepararForm('${data.nombre}')">${data.nombre}</button>`;
-                }
-            });
+            (await getDocs(collection(db, "servicios"))).forEach(d => { if(d.data().categoria === cat) container.innerHTML += `<button class="btn-sub" onclick="window.prepararForm('${d.data().nombre}')">${d.data().nombre}</button>`; });
         };
-
-        window.prepararForm = (sub) => {
-            window.selSub = sub;
-            document.getElementById('formulario-reserva').style.display = "block";
-        };
-
+        window.prepararForm = (sub) => { window.selSub = sub; document.getElementById('formulario-reserva').style.display = "block"; };
         window.confirmarCita = async () => {
-            await addDoc(collection(db, "citas"), {
-                fecha: document.getElementById('fecha-cita').value,
-                nombre: document.getElementById('nombre').value,
-                apellido: document.getElementById('apellido').value,
-                telefono: document.getElementById('telefono').value,
-                categoria: window.selCat,
-                subcategoria: window.selSub
-            });
+            await addDoc(collection(db, "citas"), { fecha: document.getElementById('fecha-cita').value, nombre: document.getElementById('nombre').value, apellido: document.getElementById('apellido').value, telefono: document.getElementById('telefono').value, direccion: document.getElementById('direccion').value, categoria: window.selCat, subcategoria: window.selSub });
             document.getElementById('modal-confirmacion').style.display = "flex";
         };
     </script>
