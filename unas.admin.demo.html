@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <title>222 Panel Administrativo</title>
+    <title>Panel Administrativo</title>
     <style>
         body { font-family: sans-serif; padding: 20px; }
         #login-box { display: flex; flex-direction: column; align-items: center; justify-content: center; height: 80vh; }
@@ -82,7 +82,13 @@
             if(hora) { await setDoc(doc(db, "configuracion", dia), { cierre: hora }, { merge: true }); cargarDatos(); }
         };
 
-        window.confirmarCita = async (id) => { await updateDoc(doc(db, "citas", id), { confirmado: true }); cargarDatos(); };
+        window.confirmarCita = async (id) => {
+            const snap = await getDoc(doc(db, "citas", id));
+            const estadoActual = snap.data().confirmado || false;
+            await updateDoc(doc(db, "citas", id), { confirmado: !estadoActual });
+            cargarDatos();
+        };
+        
         window.gestionarCita = async (id, destino) => {
             const snap = await getDocs(collection(db, "citas"));
             const cita = snap.docs.find(d => d.id === id);
@@ -126,10 +132,11 @@
 
             (await getDocs(collection(db, "citas"))).forEach(d => {
                 const c = d.data();
-                tbody.innerHTML += `<tr class="${c.confirmado ? 'confirmado' : ''}">
+                const isConfirmado = c.confirmado || false;
+                tbody.innerHTML += `<tr class="${isConfirmado ? 'confirmado' : ''}">
                 <td>${c.fecha || ''}</td><td>${c.nombre || ''}</td><td>${c.apellido || ''}</td><td>${c.telefono || ''}</td>
                 <td>${c.direccion || ''}</td><td>${c.subcategoria || ''}</td>
-                <td><button onclick="confirmarCita('${d.id}')">Confirmar</button>
+                <td><button onclick="confirmarCita('${d.id}')">${isConfirmado ? 'Desconfirmar' : 'Confirmar'}</button>
                 <button onclick="gestionarCita('${d.id}', 'listo')">Listo</button>
                 <button onclick="gestionarCita('${d.id}', 'cancelar')">Cancelar</button></td></tr>`;
             });
