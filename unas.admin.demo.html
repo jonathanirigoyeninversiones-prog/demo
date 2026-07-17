@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <title>Panel Administrativo</title>
+    <title>zzzz Panel Administrativo</title>
     <style>
         body { font-family: sans-serif; padding: 20px; }
         #login-box { display: flex; flex-direction: column; align-items: center; justify-content: center; height: 80vh; }
@@ -40,8 +40,12 @@
             <div class="horario-box">
                 <h3>Configuración Peluquería</h3>
                 <div>
-                    Número de WhatsApp: <input type="text" id="input-wpp" placeholder="Ej: 584121234567">
-                    <button onclick="guardarWpp()">Aceptar</button>
+                    WhatsApp: <input type="text" id="input-wpp" placeholder="Ej: 584121234567">
+                    <button onclick="guardarConfig('whatsapp', 'input-wpp', 'numero')">Aceptar</button>
+                </div>
+                <div style="margin-top:10px;">
+                    Citas Máximas (0 = Ilimitado): <input type="number" id="input-limite" placeholder="Ej: 10">
+                    <button onclick="guardarConfig('limite', 'input-limite', 'cantidad')">Aceptar</button>
                 </div>
                 <h3>Horarios de Atención</h3>
                 <div id="lista-horarios"></div>
@@ -63,10 +67,10 @@
             document.getElementById(id).classList.add('active');
         };
 
-        window.guardarWpp = async () => {
-            const numero = document.getElementById('input-wpp').value;
-            await setDoc(doc(db, "configuracion", "whatsapp"), { numero: numero });
-            alert("Número guardado");
+        window.guardarConfig = async (docId, inputId, campo) => {
+            const valor = document.getElementById(inputId).value;
+            await setDoc(doc(db, "configuracion", docId), { [campo]: valor }, { merge: true });
+            alert("Guardado exitosamente");
         };
 
         window.toggleDia = async (dia) => {
@@ -84,8 +88,7 @@
 
         window.confirmarCita = async (id) => {
             const snap = await getDoc(doc(db, "citas", id));
-            const estadoActual = snap.data().confirmado || false;
-            await updateDoc(doc(db, "citas", id), { confirmado: !estadoActual });
+            await updateDoc(doc(db, "citas", id), { confirmado: !snap.data().confirmado });
             cargarDatos();
         };
         
@@ -119,8 +122,12 @@
             const divHor = document.getElementById('lista-horarios');
             tbody.innerHTML = ""; divCat.innerHTML = ""; divHor.innerHTML = "";
             
+            // Cargar configuración existente
             const snapWpp = await getDoc(doc(db, "configuracion", "whatsapp"));
-            if(snapWpp.exists()) document.getElementById('input-wpp').value = snapWpp.data().numero;
+            if(snapWpp.exists()) document.getElementById('input-wpp').value = snapWpp.data().numero || "";
+            
+            const snapLim = await getDoc(doc(db, "configuracion", "limite"));
+            if(snapLim.exists()) document.getElementById('input-limite').value = snapLim.data().cantidad || 0;
 
             const dias = ["Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado", "Domingo"];
             for(let d of dias) {
