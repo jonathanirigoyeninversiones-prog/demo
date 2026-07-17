@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <title>zzzz Panel Administrativo</title>
+    <title>Panel Administrativo</title>
     <style>
         body { font-family: sans-serif; padding: 20px; }
         #login-box { display: flex; flex-direction: column; align-items: center; justify-content: center; height: 80vh; }
@@ -122,10 +122,8 @@
             const divHor = document.getElementById('lista-horarios');
             tbody.innerHTML = ""; divCat.innerHTML = ""; divHor.innerHTML = "";
             
-            // Cargar configuración existente
             const snapWpp = await getDoc(doc(db, "configuracion", "whatsapp"));
             if(snapWpp.exists()) document.getElementById('input-wpp').value = snapWpp.data().numero || "";
-            
             const snapLim = await getDoc(doc(db, "configuracion", "limite"));
             if(snapLim.exists()) document.getElementById('input-limite').value = snapLim.data().cantidad || 0;
 
@@ -140,8 +138,15 @@
             (await getDocs(collection(db, "citas"))).forEach(d => {
                 const c = d.data();
                 const isConfirmado = c.confirmado || false;
+                // Transformar YYYY-MM-DD a DD-MM-YYYY
+                let fechaFormateada = c.fecha || '';
+                if (fechaFormateada.includes('-')) {
+                    const partes = fechaFormateada.split('-');
+                    if (partes.length === 3) fechaFormateada = `${partes[2]}-${partes[1]}-${partes[0]}`;
+                }
+                
                 tbody.innerHTML += `<tr class="${isConfirmado ? 'confirmado' : ''}">
-                <td>${c.fecha || ''}</td><td>${c.nombre || ''}</td><td>${c.apellido || ''}</td><td>${c.telefono || ''}</td>
+                <td>${fechaFormateada}</td><td>${c.nombre || ''}</td><td>${c.apellido || ''}</td><td>${c.telefono || ''}</td>
                 <td>${c.direccion || ''}</td><td>${c.subcategoria || ''}</td>
                 <td><button onclick="confirmarCita('${d.id}')">${isConfirmado ? 'Desconfirmar' : 'Confirmar'}</button>
                 <button onclick="gestionarCita('${d.id}', 'listo')">Listo</button>
