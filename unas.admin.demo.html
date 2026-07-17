@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <title>Panel Administrativo Pro</title>
+    <title>xxx Panel Administrativo Pro</title>
     <style>
         body { font-family: sans-serif; padding: 20px; }
         .tab { display: none; padding: 20px; border: 1px solid #ddd; }
@@ -10,6 +10,9 @@
         .cat-box { border: 2px solid #333; padding: 15px; margin-bottom: 20px; border-radius: 8px; }
         .sub-box { margin-left: 20px; padding: 5px; border-bottom: 1px solid #eee; }
         .dia-box { display: inline-block; padding: 10px; margin: 5px; border: 1px solid #ccc; border-radius: 5px; }
+        table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+        th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+        th { background-color: #f4f4f4; }
         #login-box { text-align: center; margin-top: 50px; }
         nav button { padding: 10px; cursor: pointer; }
     </style>
@@ -31,7 +34,19 @@
 
         <div id="tab-clientes" class="tab active">
             <h1>Citas</h1>
-            <div id="lista-citas">Cargando...</div>
+            <table id="tabla-citas">
+                <thead>
+                    <tr>
+                        <th>Fecha</th>
+                        <th>Nombre</th>
+                        <th>Apellido</th>
+                        <th>Teléfono</th>
+                        <th>Dirección</th>
+                        <th>Categoría</th>
+                    </tr>
+                </thead>
+                <tbody id="lista-citas"></tbody>
+            </table>
         </div>
 
         <div id="tab-modificar" class="tab">
@@ -82,17 +97,28 @@
             cargarDatos();
         };
 
+        function formatearFecha(fechaInput) {
+            if (!fechaInput) return "";
+            const [year, month, day] = fechaInput.split('-');
+            return `${day}-${month}-${year}`;
+        }
+
         async function cargarDatos() {
-            // Cargar Citas
             const citasSnap = await getDocs(collection(db, "citas"));
-            const divCitas = document.getElementById('lista-citas');
-            divCitas.innerHTML = "";
+            const tbody = document.getElementById('lista-citas');
+            tbody.innerHTML = "";
             citasSnap.forEach(doc => {
                 const c = doc.data();
-                divCitas.innerHTML += `<p>${c.fecha} - ${c.nombre} ${c.apellido} (${c.telefono})</p>`;
+                tbody.innerHTML += `<tr>
+                    <td>${formatearFecha(c.fecha)}</td>
+                    <td>${c.nombre}</td>
+                    <td>${c.apellido}</td>
+                    <td>${c.telefono}</td>
+                    <td>${c.direccion}</td>
+                    <td>${c.categoria}</td>
+                </tr>`;
             });
 
-            // Cargar días
             const diasSemana = ["lunes", "martes", "miercoles", "jueves", "viernes", "sabado", "domingo"];
             const divDias = document.getElementById('lista-dias');
             divDias.innerHTML = "";
@@ -105,7 +131,6 @@
                 </div>`;
             }
 
-            // Cargar categorías
             const catSnap = await getDocs(collection(db, "categorias"));
             const servSnap = await getDocs(collection(db, "servicios"));
             const div = document.getElementById('lista-categorias');
