@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <title>Panel Administrativo</title>
+    <title>zzz Panel Administrativo</title>
     <style>
         body { font-family: sans-serif; padding: 20px; }
         #login-box { display: flex; flex-direction: column; align-items: center; justify-content: center; height: 80vh; }
@@ -143,6 +143,7 @@
                 document.getElementById('login-box').style.display = 'none';
                 document.getElementById('admin-panel').style.display = 'block';
                 cargarDatos();
+                setInterval(cargarDatos, 30000); // Refresco automático cada 30 segundos
             } catch (e) { alert("Error de acceso"); }
         });
     </script>
