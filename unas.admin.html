@@ -2,14 +2,14 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <title>Panel Administrativo Pro</title>
+    <title>                Panel Administrativo Pro</title>
     <style>
         body { font-family: sans-serif; padding: 20px; }
         .tab { display: none; padding: 20px; border: 1px solid #ddd; }
         .active { display: block; }
-        .editor-box { border: 1px solid #ccc; padding: 10px; margin: 5px; border-radius: 5px; }
+        .cat-box { border: 2px solid #333; padding: 15px; margin-bottom: 20px; border-radius: 8px; }
+        .sub-box { margin-left: 20px; padding: 5px; border-bottom: 1px solid #eee; }
         #login-box { text-align: center; margin-top: 50px; }
-        nav button { padding: 10px; cursor: pointer; }
     </style>
 </head>
 <body>
@@ -34,27 +34,17 @@
 
         <div id="tab-modificar" class="tab">
             <h1>Gestión de Estructura</h1>
-            <h3>1. Crear Nueva Categoría</h3>
-            <input type="text" id="cat-nombre" placeholder="Ej: Uñas">
+            <input type="text" id="cat-nombre" placeholder="Nombre categoría (Ej: Uñas)">
             <button onclick="agregarCategoria()">Crear Categoría</button>
-            
-            <hr>
-            
-            <h3>2. Agregar Sub-servicio</h3>
-            <select id="select-cat"></select>
-            <input type="text" id="sub-nombre" placeholder="Ej: Acrigel">
-            <button onclick="agregarSubServicio()">Guardar Sub-servicio</button>
-            
-            <div id="lista-estructurada" style="margin-top:20px;"></div>
+            <div id="lista-categorias" style="margin-top:20px;"></div>
         </div>
     </div>
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/12.16.0/firebase-app.js";
         import { getAuth, signInWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/12.16.0/firebase-auth.js";
-        import { getFirestore, collection, getDocs, addDoc, deleteDoc, doc } from "https://www.gstatic.com/firebasejs/12.16.0/firebase-firestore.js";
+        import { getFirestore, collection, getDocs, addDoc, deleteDoc, doc, query, where } from "https://www.gstatic.com/firebasejs/12.16.0/firebase-firestore.js";
 
-        // --- PEGA TUS CREDENCIALES AQUI ---
         const firebaseConfig = {
             apiKey: "AIzaSyDCN2ah_fSjW385KgAb48W8Cd9PhFDOQJ0",
             authDomain: "estilista-demo.firebaseapp.com",
@@ -74,36 +64,39 @@
 
         window.agregarCategoria = async () => {
             const nombre = document.getElementById('cat-nombre').value;
-            await addDoc(collection(db, "categorias"), { nombre });
-            alert("Categoría creada");
-            cargarDatos();
+            if(nombre) { await addDoc(collection(db, "categorias"), { nombre }); cargarDatos(); }
         };
 
-        window.agregarSubServicio = async () => {
-            const categoria = document.getElementById('select-cat').value;
-            const nombre = document.getElementById('sub-nombre').value;
-            await addDoc(collection(db, "servicios"), { categoria, nombre });
-            alert("Sub-servicio agregado");
-            cargarDatos();
+        window.agregarSub = async (catNombre) => {
+            const subNombre = prompt("Nombre del sub-servicio para " + catNombre + ":");
+            if(subNombre) { await addDoc(collection(db, "servicios"), { categoria: catNombre, nombre: subNombre }); cargarDatos(); }
         };
 
         async function cargarDatos() {
             const catSnap = await getDocs(collection(db, "categorias"));
-            const select = document.getElementById('select-cat');
-            select.innerHTML = "";
-            catSnap.forEach(doc => select.innerHTML += `<option value="${doc.data().nombre}">${doc.data().nombre}</option>`);
-
             const servSnap = await getDocs(collection(db, "servicios"));
-            const lista = document.getElementById('lista-estructurada');
-            lista.innerHTML = "<h4>Servicios actuales:</h4>";
-            servSnap.forEach(doc => {
-                const s = doc.data();
-                lista.innerHTML += `<div class="editor-box"><strong>${s.categoria}:</strong> ${s.nombre} 
-                <button onclick="eliminar('${doc.id}', 'servicios')">X</button></div>`;
+            const div = document.getElementById('lista-categorias');
+            div.innerHTML = "";
+            
+            catSnap.forEach(catDoc => {
+                const cat = catDoc.data().nombre;
+                div.innerHTML += `<div class="cat-box">
+                    <strong>Categoría: ${cat}</strong>
+                    <button onclick="agregarSub('${cat}')">Agregar Sub-servicio</button>
+                    <div id="sub-${catDoc.id}"></div>
+                </div>`;
+                
+                // Filtrar servicios de esta categoría
+                servSnap.forEach(sDoc => {
+                    if(sDoc.data().categoria === cat) {
+                        document.getElementById(`sub-${catDoc.id}`).innerHTML += 
+                        `<div class="sub-box">- ${sDoc.data().nombre} <button onclick="eliminar('${sDoc.id}')">Eliminar</button></div>`;
+                    }
+                });
             });
         }
 
-        window.eliminar = async (id, col) => { await deleteDoc(doc(db, col, id)); cargarDatos(); };
+        window.eliminar = async (id) => { await deleteDoc(doc(db, "servicios", id)); cargarDatos(); };
 
         document.getElementById('btn-entrar').addEventListener('click', async () => {
             try {
@@ -111,7 +104,7 @@
                 document.getElementById('login-box').style.display = 'none';
                 document.getElementById('admin-panel').style.display = 'block';
                 cargarDatos();
-            } catch (e) { alert("Error de acceso: " + e.message); }
+            } catch (e) { alert("Error: " + e.message); }
         });
     </script>
 </body>
