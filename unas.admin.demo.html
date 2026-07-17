@@ -2,13 +2,14 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <title>111 Panel Administrativo</title>
+    <title>Panel Administrativo</title>
     <style>
         body { font-family: sans-serif; padding: 20px; }
         .tab { display: none; padding: 20px; border: 1px solid #ddd; }
         .active { display: block; }
         table { width: 100%; border-collapse: collapse; margin-top: 10px; }
         th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+        .cat-box { border: 1px solid #333; padding: 10px; margin-top: 10px; }
     </style>
 </head>
 <body>
@@ -25,7 +26,7 @@
         </div>
         <div id="tab-modificar" class="tab">
             <h1>Configuración de WhatsApp</h1>
-            <input type="tel" id="admin-ws-input" placeholder="Tu número WhatsApp (con código país)">
+            <input type="tel" id="admin-ws-input" placeholder="Tu número WhatsApp">
             <button onclick="guardarAdminWS()">Guardar Número</button>
             <h1>Gestión de Estructura</h1>
             <div id="lista-categorias"></div>
@@ -46,26 +47,29 @@
         window.guardarAdminWS = async () => {
             const num = document.getElementById('admin-ws-input').value;
             await setDoc(doc(db, "config", "whatsapp_admin"), { numero: num });
-            alert("Número guardado exitosamente.");
+            alert("Número guardado.");
         };
 
         window.cargarDatos = async () => {
             const tbody = document.getElementById('lista-citas');
+            const divCat = document.getElementById('lista-categorias');
             tbody.innerHTML = "";
+            divCat.innerHTML = "";
+            
             const wsSnap = await getDoc(doc(db, "config", "whatsapp_admin"));
             const adminNum = wsSnap.exists() ? wsSnap.data().numero : "";
             
             (await getDocs(collection(db, "citas"))).forEach(d => {
                 const c = d.data();
                 tbody.innerHTML += `<tr><td>${c.fecha}</td><td>${c.nombre} ${c.apellido}</td><td>${c.telefono}</td><td>${c.direccion || 'N/A'}</td><td>${c.subcategoria}</td>
-                <td>
-                    <button onclick="window.open('https://wa.me/${adminNum}?text=Hola, tengo una reserva para el ${c.fecha}')">Contactar vía Admin WS</button>
-                    <button onclick="gestionar('${d.id}', 'listo')">Listo</button>
-                </td></tr>`;
+                <td><button onclick="window.open('https://wa.me/${adminNum}?text=Hola, confirmamos su cita')">WhatsApp</button> <button onclick="gestionar('${d.id}', 'listo')">Listo</button></td></tr>`;
+            });
+
+            (await getDocs(collection(db, "categorias"))).forEach(async (catDoc) => {
+                divCat.innerHTML += `<div class="cat-box"><strong>${catDoc.data().nombre}</strong></div>`;
             });
         };
         
-        // Configuración de actualización automática cada 30 segundos
         setInterval(cargarDatos, 30000);
         
         window.gestionar = async (id, col) => {
@@ -85,4 +89,3 @@
     </script>
 </body>
 </html>
-```[cite: 2]
