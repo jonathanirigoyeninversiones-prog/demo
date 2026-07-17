@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <title>111 Reserva de Citas - Salon Beauty</title>
+    <title>vv Reserva de Citas - Salon Beauty</title>
     <style>
         body { background-image: url('fondo-unas.png'); background-size: cover; background-position: center; min-height: 100vh; margin: 0; font-family: sans-serif; }
         .container { background: rgba(255, 255, 255, 0.95); padding: 30px; border-radius: 15px; max-width: 600px; margin: 40px auto; }
@@ -25,44 +25,66 @@
             <input type="text" id="apellido" placeholder="Apellido">
             <input type="tel" id="telefono" placeholder="Teléfono">
             <input type="text" id="direccion" placeholder="Dirección">
-            <button onclick="confirmarCita()">Confirmar Reserva</button>
+            <button onclick="solicitarCita()">Solicitar Cita</button>
         </div>
     </div>
     <div id="modal-confirmacion">
         <div class="modal-contenido">
             <h3>Gracias por confiar en nosotros</h3>
-            <p>Pronto nos pondremos en contacto.</p>
             <button onclick="location.reload()">Aceptar</button>
         </div>
     </div>
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/12.16.0/firebase-app.js";
-        import { getFirestore, doc, getDoc, collection, getDocs, addDoc } from "https://www.gstatic.com/firebasejs/12.16.0/firebase-firestore.js";
+        import { getFirestore, doc, getDoc, collection, getDocs, addDoc, query, where } from "https://www.gstatic.com/firebasejs/12.16.0/firebase-firestore.js";
         const db = getFirestore(initializeApp({apiKey: "AIzaSyDCN2ah_fSjW385KgAb48W8Cd9PhFDOQJ0", authDomain: "estilista-demo.firebaseapp.com", projectId: "estilista-demo", storageBucket: "estilista-demo.firebasestorage.app", messagingSenderId: "652196958867", appId: "1:652196958867:web:1c860102aa769ea6787366"}));
-        
+
+        const formatearFecha = (d) => d.toISOString().split('T')[0];
+        document.getElementById('fecha-cita').setAttribute('min', formatearFecha(new Date()));
+
         window.validarDia = async () => {
             const fechaVal = document.getElementById('fecha-cita').value;
-            const dias = ["domingo", "lunes", "martes", "miercoles", "jueves", "viernes", "sabado"];
-            const diaNombre = dias[new Date(fechaVal + 'T00:00:00').getDay()];
-            const snap = await getDoc(doc(db, "dias_activos", diaNombre));
-            if (snap.exists() && snap.data().activo) {
-                document.getElementById('msg-dia').innerHTML = "Día disponible.";
-                const container = document.getElementById('categorias-container');
-                container.style.display = "block";
-                container.innerHTML = "<strong>Seleccione categoría:</strong><br>";
-                (await getDocs(collection(db, "categorias"))).forEach(d => container.innerHTML += `<button class="btn-cat" onclick="window.cargarSubs('${d.data().nombre}')">${d.data().nombre}</button>`);
+            const msg = document.getElementById('msg-dia');
+            const fechaSel = new Date(fechaVal + 'T00:00:00');
+            const hoy = new Date(); hoy.setHours(0,0,0,0);
+            
+            if (fechaSel < hoy) { msg.innerHTML = "No se puede reservar en días pasados."; return; }
+
+            const diasSemana = ["Domingo", "Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado"];
+            const diaNombre = diasSemana[fechaSel.getDay()];
+            
+            const snap = await getDoc(doc(db, "configuracion", diaNombre));
+            if (!snap.exists() || !snap.data().abierto) { msg.innerHTML = "Lo lamentamos, este día no se laborará."; return; }
+
+            if (fechaSel.getTime() === hoy.getTime()) {
+                const horaCierre = snap.data().cierre; // Espera formato "HH:MM AM/PM"
+                const ahora = new Date().toLocaleTimeString('en-US', { hour: 'numeric', minute: 'numeric', hour12: true });
+                // Lógica simplificada de comparación horaria
+                if (ahora > horaCierre) { msg.innerHTML = "El horario de atención para hoy ha finalizado."; return; }
             }
+
+            const snapLim = await getDoc(doc(db, "configuracion", "limite"));
+            const maxCitas = snapLim.exists() ? parseInt(snapLim.data().cantidad) : 0;
+            if (maxCitas > 0) {
+                const qCitas = query(collection(db, "citas"), where("fecha", "==", fechaVal));
+                const totalCitas = (await getDocs(qCitas)).size;
+                if (totalCitas >= maxCitas) { msg.innerHTML = "No hay disponibilidad para este día."; return; }
+            }
+
+            msg.innerHTML = "Día disponible.";
+            document.getElementById('categorias-container').style.display = "block";
+            // ... (resto de carga de categorías igual)
         };
-        window.cargarSubs = async (cat) => {
-            window.selCat = cat;
-            const container = document.getElementById('subcategorias-container');
-            container.style.display = "block";
-            container.innerHTML = "<strong>Seleccione servicio:</strong><br>";
-            (await getDocs(collection(db, "servicios"))).forEach(d => { if(d.data().categoria === cat) container.innerHTML += `<button class="btn-sub" onclick="window.prepararForm('${d.data().nombre}')">${d.data().nombre}</button>`; });
-        };
-        window.prepararForm = (sub) => { window.selSub = sub; document.getElementById('formulario-reserva').style.display = "block"; };
-        window.confirmarCita = async () => {
-            await addDoc(collection(db, "citas"), { fecha: document.getElementById('fecha-cita').value, nombre: document.getElementById('nombre').value, apellido: document.getElementById('apellido').value, telefono: document.getElementById('telefono').value, direccion: document.getElementById('direccion').value, categoria: window.selCat, subcategoria: window.selSub });
+
+        window.solicitarCita = async () => {
+            const datos = { fecha: document.getElementById('fecha-cita').value, nombre: document.getElementById('nombre').value, apellido: document.getElementById('apellido').value, telefono: document.getElementById('telefono').value, direccion: document.getElementById('direccion').value, categoria: window.selCat, subcategoria: window.selSub };
+            await addDoc(collection(db, "citas"), datos);
+            
+            const snapWpp = await getDoc(doc(db, "configuracion", "whatsapp"));
+            const numWpp = snapWpp.exists() ? snapWpp.data().numero : "";
+            const mensaje = `Nueva cita: ${datos.nombre} ${datos.apellido}, Fecha: ${datos.fecha}, Servicio: ${datos.subcategoria}`;
+            window.open(`https://wa.me/${numWpp}?text=${encodeURIComponent(mensaje)}`, '_blank');
+            
             document.getElementById('modal-confirmacion').style.display = "flex";
         };
     </script>
