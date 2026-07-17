@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <title>111 Reserva de Citas - Salon Beauty</title>
+    <title>Reserva de Citas - Salon Beauty</title>
     <style>
         body {
             background-image: url('fondo-unas.png');
@@ -16,8 +16,6 @@
             color: #333;
         }
         .menu { display: flex; justify-content: center; gap: 30px; background: rgba(255, 255, 255, 0.9); padding: 20px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
-        .categoria { cursor: pointer; color: #555; font-weight: 600; text-transform: uppercase; letter-spacing: 1px; transition: color 0.3s ease; }
-        .categoria:hover { color: #d4af37; }
         #calendario-container, #formulario-reserva { background: rgba(255, 255, 255, 0.95); padding: 40px; border-radius: 15px; max-width: 450px; margin: 40px auto; box-shadow: 0 10px 25px rgba(0,0,0,0.1); }
         h3 { color: #444; margin-top: 0; }
         .hora-btn { width: 100%; margin: 8px 0; padding: 12px; cursor: pointer; background: #fff; border: 1px solid #d4af37; border-radius: 5px; color: #d4af37; font-weight: bold; transition: all 0.3s; }
@@ -31,9 +29,7 @@
 </head>
 <body>
 
-    <div class="menu">
-        <!-- Cintillo de categorías eliminado -->
-    </div>
+    <div class="menu"></div>
 
     <div id="calendario-container">
         <h3>Seleccione su fecha</h3>
@@ -85,16 +81,12 @@
             }
         });
 
-        window.categoriaActual = "";
+        // Valor fijo para el servicio al no haber selección manual[cite: 2]
+        window.categoriaActual = "Servicio General";
         window.horaSeleccionada = "";
 
         document.getElementById('fecha-cita').min = new Date().toLocaleDateString('en-CA', { timeZone: 'America/Caracas' });
         
-        window.seleccionarCategoria = (cat) => {
-            window.categoriaActual = cat;
-            document.getElementById('calendario-container').style.display = 'block';
-        };
-
         window.cargarHorarios = async () => {
             const inputFecha = document.getElementById('fecha-cita').value;
             if (!inputFecha) return;
