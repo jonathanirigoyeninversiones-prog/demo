@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <title>ccc Panel Administrativo Pro</title>
+    <title>Panel Administrativo Pro</title>
     <style>
         body { font-family: sans-serif; padding: 20px; }
         .tab { display: none; padding: 20px; border: 1px solid #ddd; }
@@ -10,6 +10,7 @@
         .cat-box { border: 2px solid #333; padding: 15px; margin-bottom: 20px; border-radius: 8px; }
         .sub-box { margin-left: 20px; padding: 5px; border-bottom: 1px solid #eee; }
         #login-box { text-align: center; margin-top: 50px; }
+        nav button { padding: 10px; cursor: pointer; }
     </style>
 </head>
 <body>
@@ -43,7 +44,7 @@
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/12.16.0/firebase-app.js";
         import { getAuth, signInWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/12.16.0/firebase-auth.js";
-        import { getFirestore, collection, getDocs, addDoc, deleteDoc, doc, query, where } from "https://www.gstatic.com/firebasejs/12.16.0/firebase-firestore.js";
+        import { getFirestore, collection, getDocs, addDoc, deleteDoc, doc } from "https://www.gstatic.com/firebasejs/12.16.0/firebase-firestore.js";
 
         const firebaseConfig = {
             apiKey: "AIzaSyDCN2ah_fSjW385KgAb48W8Cd9PhFDOQJ0",
@@ -72,6 +73,10 @@
             if(subNombre) { await addDoc(collection(db, "servicios"), { categoria: catNombre, nombre: subNombre }); cargarDatos(); }
         };
 
+        window.eliminarCategoria = async (id) => {
+            if(confirm("¿Borrar esta categoría completa?")) { await deleteDoc(doc(db, "categorias", id)); cargarDatos(); }
+        };
+
         async function cargarDatos() {
             const catSnap = await getDocs(collection(db, "categorias"));
             const servSnap = await getDocs(collection(db, "servicios"));
@@ -83,10 +88,10 @@
                 div.innerHTML += `<div class="cat-box">
                     <strong>Categoría: ${cat}</strong>
                     <button onclick="agregarSub('${cat}')">Agregar Sub-servicio</button>
+                    <button onclick="eliminarCategoria('${catDoc.id}')" style="background:red; color:white;">Borrar Categoría</button>
                     <div id="sub-${catDoc.id}"></div>
                 </div>`;
                 
-                // Filtrar servicios de esta categoría
                 servSnap.forEach(sDoc => {
                     if(sDoc.data().categoria === cat) {
                         document.getElementById(`sub-${catDoc.id}`).innerHTML += 
