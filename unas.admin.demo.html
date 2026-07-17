@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <title>ccc Panel Administrativo</title>
+    <title>Panel Administrativo</title>
     <style>
         body { font-family: sans-serif; padding: 20px; }
         #login-box { display: flex; flex-direction: column; align-items: center; justify-content: center; height: 80vh; }
@@ -15,6 +15,7 @@
         .cat-box { border: 1px solid #333; padding: 10px; margin-top: 10px; border-radius: 5px; }
         .cat-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
         .sub-item { display: flex; justify-content: space-between; padding: 5px; border-bottom: 1px solid #eee; background: #f9f9f9; }
+        .horario-box { border: 1px solid #ccc; padding: 15px; margin-top: 20px; }
     </style>
 </head>
 <body>
@@ -36,6 +37,10 @@
         
         <div id="tab-modificar" class="tab">
             <h1>Gestión de Estructura</h1>
+            <div class="horario-box">
+                <h3>Horarios de Atención</h3>
+                <div id="lista-horarios"></div>
+            </div>
             <button onclick="agregarCategoria()">+ Agregar Nueva Categoría</button>
             <div id="lista-categorias"></div>
         </div>
@@ -44,13 +49,26 @@
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/12.16.0/firebase-app.js";
         import { getAuth, signInWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/12.16.0/firebase-auth.js";
-        import { getFirestore, collection, getDocs, doc, deleteDoc, addDoc, updateDoc, query, where } from "https://www.gstatic.com/firebasejs/12.16.0/firebase-firestore.js";
+        import { getFirestore, collection, getDocs, doc, deleteDoc, addDoc, updateDoc, setDoc, getDoc, query, where } from "https://www.gstatic.com/firebasejs/12.16.0/firebase-firestore.js";
         
         const db = getFirestore(initializeApp({apiKey: "AIzaSyDCN2ah_fSjW385KgAb48W8Cd9PhFDOQJ0", authDomain: "estilista-demo.firebaseapp.com", projectId: "estilista-demo", storageBucket: "estilista-demo.firebasestorage.app", messagingSenderId: "652196958867", appId: "1:652196958867:web:1c860102aa769ea6787366"}));
         
         window.mostrarTab = (id) => {
             document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
             document.getElementById(id).classList.add('active');
+        };
+
+        window.toggleDia = async (dia) => {
+            const docRef = doc(db, "configuracion", dia);
+            const snap = await getDoc(docRef);
+            const nuevoEstado = snap.exists() ? !snap.data().abierto : true;
+            await setDoc(docRef, { abierto: nuevoEstado }, { merge: true });
+            cargarDatos();
+        };
+
+        window.actualizarCierre = async (dia) => {
+            const hora = prompt("Introduce hora de cierre (ej: 06:00 PM):");
+            if(hora) { await setDoc(doc(db, "configuracion", dia), { cierre: hora }, { merge: true }); cargarDatos(); }
         };
 
         window.confirmarCita = async (id) => { await updateDoc(doc(db, "citas", id), { confirmado: true }); cargarDatos(); };
@@ -81,8 +99,17 @@
         window.cargarDatos = async () => {
             const tbody = document.getElementById('lista-citas');
             const divCat = document.getElementById('lista-categorias');
-            tbody.innerHTML = ""; divCat.innerHTML = "";
+            const divHor = document.getElementById('lista-horarios');
+            tbody.innerHTML = ""; divCat.innerHTML = ""; divHor.innerHTML = "";
             
+            const dias = ["Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado", "Domingo"];
+            for(let d of dias) {
+                const snap = await getDoc(doc(db, "configuracion", d));
+                const data = snap.exists() ? snap.data() : {abierto: false, cierre: "No definido"};
+                divHor.innerHTML += `<div>${d}: <button onclick="toggleDia('${d}')">${data.abierto ? 'Abierto' : 'Cerrado'}</button> 
+                Cierre: <span onclick="actualizarCierre('${d}')" style="cursor:pointer; color:blue;">${data.cierre}</span></div>`;
+            }
+
             (await getDocs(collection(db, "citas"))).forEach(d => {
                 const c = d.data();
                 tbody.innerHTML += `<tr class="${c.confirmado ? 'confirmado' : ''}"><td>${c.fecha}</td><td>${c.nombre}</td><td>${c.telefono}</td><td>${c.subcategoria}</td>
@@ -96,11 +123,9 @@
             cats.forEach(cat => {
                 let catNombre = cat.data().nombre;
                 let html = `<div class="cat-box"><div class="cat-header"><strong>${catNombre}</strong>
-                <div>
-                    <button onclick="agregarServicio('${catNombre}')">+ Agregar Servicio</button>
-                    <button onclick="modificarCategoria('${cat.id}', '${catNombre}')">Editar Cat</button>
-                    <button onclick="eliminarCategoria('${cat.id}')">Eliminar Cat</button>
-                </div></div>`;
+                <div><button onclick="agregarServicio('${catNombre}')">+ Agregar Servicio</button>
+                <button onclick="modificarCategoria('${cat.id}', '${catNombre}')">Editar Cat</button>
+                <button onclick="eliminarCategoria('${cat.id}')">Eliminar Cat</button></div></div>`;
                 servs.forEach(s => { 
                     if (s.data().categoria === catNombre) {
                         html += `<div class="sub-item"><span>${s.data().nombre}</span>
