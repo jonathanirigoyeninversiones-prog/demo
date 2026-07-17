@@ -2,69 +2,99 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <title>Panel Administrativo</title>
+    <title>111 Panel Administrativo</title>
     <style>
         body { font-family: sans-serif; padding: 20px; }
+        #login-box { display: flex; flex-direction: column; align-items: center; justify-content: center; height: 80vh; }
+        #login-box input { margin: 5px; padding: 10px; width: 250px; }
         .tab { display: none; padding: 20px; border: 1px solid #ddd; }
         .active { display: block; }
-        .cat-box { border: 1px solid #333; padding: 15px; margin-top: 15px; border-radius: 5px; }
-        .sub-item { display: flex; justify-content: space-between; padding: 8px; border-bottom: 1px solid #eee; background: #f9f9f9; }
+        table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+        th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+        .confirmado { background-color: #d4edda !important; }
+        .cat-box { border: 1px solid #333; padding: 10px; margin-top: 10px; border-radius: 5px; }
+        .sub-item { display: flex; justify-content: space-between; padding: 5px; border-bottom: 1px solid #eee; background: #f9f9f9; }
     </style>
 </head>
 <body>
-    <div id="admin-panel">
-        <h1>Gestión de Estructura</h1>
-        <div id="lista-categorias"></div>
+    <div id="login-box">
+        <h3>Acceso Administrativo</h3>
+        <input type="email" id="user" placeholder="Correo">
+        <input type="password" id="pass" placeholder="Contraseña">
+        <button id="btn-entrar">Entrar</button>
     </div>
+
+    <div id="admin-panel" style="display:none;">
+        <button onclick="mostrarTab('tab-clientes')">Clientes</button>
+        <button onclick="mostrarTab('tab-modificar')">Modificar</button>
+        
+        <div id="tab-clientes" class="tab active">
+            <button onclick="cargarDatos()">Refrescar</button>
+            <table><thead><tr><th>Fecha</th><th>Nombre</th><th>Tel</th><th>Servicio</th><th>Acciones</th></tr></thead><tbody id="lista-citas"></tbody></table>
+        </div>
+        
+        <div id="tab-modificar" class="tab">
+            <h1>Gestión de Estructura</h1>
+            <div id="lista-categorias"></div>
+        </div>
+    </div>
+
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/12.16.0/firebase-app.js";
-        import { getFirestore, collection, getDocs, doc, deleteDoc, updateDoc } from "https://www.gstatic.com/firebasejs/12.16.0/firebase-firestore.js";
+        import { getAuth, signInWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/12.16.0/firebase-auth.js";
+        import { getFirestore, collection, getDocs, doc, deleteDoc, addDoc, updateDoc } from "https://www.gstatic.com/firebasejs/12.16.0/firebase-firestore.js";
         
         const db = getFirestore(initializeApp({apiKey: "AIzaSyDCN2ah_fSjW385KgAb48W8Cd9PhFDOQJ0", authDomain: "estilista-demo.firebaseapp.com", projectId: "estilista-demo", storageBucket: "estilista-demo.firebasestorage.app", messagingSenderId: "652196958867", appId: "1:652196958867:web:1c860102aa769ea6787366"}));
         
-        // Funciones de acción
-        window.eliminarServicio = async (id) => {
-            if(confirm("¿Seguro que quieres eliminar este servicio?")) {
-                await deleteDoc(doc(db, "servicios", id));
-                cargarDatos();
-            }
+        window.mostrarTab = (id) => {
+            document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+            document.getElementById(id).classList.add('active');
         };
 
-        window.modificarServicio = async (id) => {
-            const nuevoNombre = prompt("Introduce el nuevo nombre del servicio:");
-            if(nuevoNombre) {
-                await updateDoc(doc(db, "servicios", id), { nombre: nuevoNombre });
-                cargarDatos();
+        window.confirmarCita = async (id) => { await updateDoc(doc(db, "citas", id), { confirmado: true }); cargarDatos(); };
+
+        window.gestionarCita = async (id, destino) => {
+            const snap = await getDocs(collection(db, "citas"));
+            const cita = snap.docs.find(d => d.id === id);
+            if(cita) {
+                await addDoc(collection(db, destino), cita.data());
+                await deleteDoc(doc(db, "citas", id));
             }
+            cargarDatos();
         };
 
         window.cargarDatos = async () => {
+            const tbody = document.getElementById('lista-citas');
             const divCat = document.getElementById('lista-categorias');
-            divCat.innerHTML = "Cargando...";
+            tbody.innerHTML = ""; divCat.innerHTML = "";
             
+            (await getDocs(collection(db, "citas"))).forEach(d => {
+                const c = d.data();
+                tbody.innerHTML += `<tr class="${c.confirmado ? 'confirmado' : ''}"><td>${c.fecha}</td><td>${c.nombre}</td><td>${c.telefono}</td><td>${c.subcategoria}</td>
+                <td>
+                    <button onclick="confirmarCita('${d.id}')">Confirmar</button>
+                    <button onclick="gestionarCita('${d.id}', 'listo')">Listo</button>
+                    <button onclick="gestionarCita('${d.id}', 'cancelar')">Cancelar</button>
+                </td></tr>`;
+            });
+
             const cats = await getDocs(collection(db, "categorias"));
             const servs = await getDocs(collection(db, "servicios"));
-            
-            divCat.innerHTML = "";
-            cats.forEach(catDoc => {
-                let catNombre = catDoc.data().nombre;
-                let html = `<div class="cat-box"><strong>Categoría: ${catNombre}</strong>`;
-                
-                servs.forEach(s => {
-                    if (s.data().categoria === catNombre) {
-                        html += `<div class="sub-item"><span>${s.data().nombre}</span> 
-                        <div>
-                            <button onclick="modificarServicio('${s.id}')">Modificar</button>
-                            <button onclick="eliminarServicio('${s.id}')">Eliminar</button>
-                        </div></div>`;
-                    }
-                });
+            cats.forEach(cat => {
+                let html = `<div class="cat-box"><strong>${cat.data().nombre}</strong>`;
+                servs.forEach(s => { if (s.data().categoria === cat.data().nombre) html += `<div class="sub-item"><span>${s.data().nombre}</span></div>`; });
                 divCat.innerHTML += html + `</div>`;
             });
         };
-
-        // Carga inicial
-        cargarDatos();
+        
+        document.getElementById('btn-entrar').addEventListener('click', async () => {
+            try {
+                await signInWithEmailAndPassword(getAuth(), document.getElementById('user').value, document.getElementById('pass').value);
+                document.getElementById('login-box').style.display = 'none';
+                document.getElementById('admin-panel').style.display = 'block';
+                cargarDatos();
+            } catch (e) { alert("Error de acceso"); }
+        });
     </script>
 </body>
 </html>
