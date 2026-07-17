@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <title>222 Panel Administrativo Pro</title>
+    <title>Panel Administrativo Pro</title>
     <style>
         body { font-family: sans-serif; padding: 20px; }
         .tab { display: none; padding: 20px; border: 1px solid #ddd; }
@@ -60,7 +60,7 @@
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/12.16.0/firebase-app.js";
         import { getAuth, signInWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/12.16.0/firebase-auth.js";
-        import { getFirestore, collection, getDocs, addDoc, deleteDoc, doc, setDoc, getDoc } from "https://www.gstatic.com/firebasejs/12.16.0/firebase-firestore.js";
+        import { getFirestore, collection, getDocs, addDoc, deleteDoc, doc, setDoc, getDoc, updateDoc } from "https://www.gstatic.com/firebasejs/12.16.0/firebase-firestore.js";
 
         const firebaseConfig = {
             apiKey: "AIzaSyDCN2ah_fSjW385KgAb48W8Cd9PhFDOQJ0",
@@ -79,7 +79,6 @@
         };
 
         window.cargarDatos = async () => {
-            // Cargar Citas
             const citasSnap = await getDocs(collection(db, "citas"));
             const tbody = document.getElementById('lista-citas');
             tbody.innerHTML = "";
@@ -97,7 +96,6 @@
                 </tr>`;
             });
 
-            // Cargar Horario, Días y Estructura
             const confSnap = await getDoc(doc(db, "config", "horario"));
             if (confSnap.exists()) document.getElementById('hora-cierre-input').value = confSnap.data().cierre;
 
@@ -119,33 +117,30 @@
             catSnap.forEach(catDoc => {
                 const cat = catDoc.data().nombre;
                 divCat.innerHTML += `<div class="cat-box"><strong>Categoría: ${cat}</strong>
+                    <button onclick="editarElemento('categorias', '${catDoc.id}', '${cat}')">Editar</button>
                     <button onclick="agregarSub('${cat}')">Sub-servicio</button>
                     <button onclick="eliminarCategoria('${catDoc.id}')" style="background:red; color:white;">Borrar</button>
                     <div id="sub-${catDoc.id}"></div></div>`;
                 servSnap.forEach(sDoc => {
-                    if(sDoc.data().categoria === cat) document.getElementById(`sub-${catDoc.id}`).innerHTML += `<div class="sub-box">- ${sDoc.data().nombre} <button onclick="eliminar('${sDoc.id}')">Eliminar</button></div>`;
+                    if(sDoc.data().categoria === cat) document.getElementById(`sub-${catDoc.id}`).innerHTML += `<div class="sub-box">- ${sDoc.data().nombre} <button onclick="editarElemento('servicios', '${sDoc.id}', '${sDoc.data().nombre}')">Editar</button> <button onclick="eliminar('${sDoc.id}')">Eliminar</button></div>`;
                 });
             });
         };
 
         setInterval(cargarDatos, 30000);
 
+        window.editarElemento = async (col, id, actual) => {
+            const nuevo = prompt("Nuevo nombre:", actual);
+            if (nuevo) { await updateDoc(doc(db, col, id), { nombre: nuevo }); cargarDatos(); }
+        };
+
         window.gestionarCita = async (id, accion) => {
             const docRef = doc(db, "citas", id);
             const docSnap = await getDoc(docRef);
             const data = docSnap.data();
-            if (accion === 'confirmar') {
-                await setDoc(docRef, { ...data, confirmado: true });
-                cargarDatos();
-            } else if (accion === 'listo') {
-                await addDoc(collection(db, "listo"), data);
-                await deleteDoc(docRef);
-                cargarDatos();
-            } else if (accion === 'cancelado') {
-                await addDoc(collection(db, "cancelado"), data);
-                await deleteDoc(docRef);
-                cargarDatos();
-            }
+            if (accion === 'confirmar') { await setDoc(docRef, { ...data, confirmado: true }); cargarDatos(); }
+            else if (accion === 'listo') { await addDoc(collection(db, "listo"), data); await deleteDoc(docRef); cargarDatos(); }
+            else if (accion === 'cancelado') { await addDoc(collection(db, "cancelado"), data); await deleteDoc(docRef); cargarDatos(); }
         };
 
         window.toggleDia = async (dia, activo) => { await setDoc(doc(db, "dias_activos", dia), { activo: !activo }); cargarDatos(); };
