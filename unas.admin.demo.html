@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <title>Panel Administrativo</title>
+    <title>xxx Panel Administrativo</title>
     <style>
         body { font-family: sans-serif; padding: 20px; }
         #login-box { display: flex; flex-direction: column; align-items: center; justify-content: center; height: 80vh; }
@@ -38,14 +38,10 @@
         <div id="tab-modificar" class="tab">
             <h1>Gestión de Estructura</h1>
             <div class="horario-box">
-                <h3>Configuración Peluquería</h3>
+                <h3>Configuración</h3>
                 <div>
                     WhatsApp: <input type="text" id="input-wpp" placeholder="Ej: 584121234567">
                     <button onclick="guardarConfig('whatsapp', 'input-wpp', 'numero')">Aceptar</button>
-                </div>
-                <div style="margin-top:10px;">
-                    Citas Máximas (0 = Ilimitado): <input type="number" id="input-limite" placeholder="Ej: 10">
-                    <button onclick="guardarConfig('limite', 'input-limite', 'cantidad')">Aceptar</button>
                 </div>
                 <h3>Horarios de Atención</h3>
                 <div id="lista-horarios"></div>
@@ -71,6 +67,13 @@
             const valor = document.getElementById(inputId).value;
             await setDoc(doc(db, "configuracion", docId), { [campo]: valor }, { merge: true });
             alert("Guardado exitosamente");
+        };
+
+        // Nueva función para guardar límite por día
+        window.guardarLimiteDia = async (dia, inputId) => {
+            const valor = document.getElementById(inputId).value;
+            await setDoc(doc(db, "configuracion", dia), { limite: parseInt(valor) }, { merge: true });
+            alert("Límite guardado");
         };
 
         window.toggleDia = async (dia) => {
@@ -124,15 +127,15 @@
             
             const snapWpp = await getDoc(doc(db, "configuracion", "whatsapp"));
             if(snapWpp.exists()) document.getElementById('input-wpp').value = snapWpp.data().numero || "";
-            const snapLim = await getDoc(doc(db, "configuracion", "limite"));
-            if(snapLim.exists()) document.getElementById('input-limite').value = snapLim.data().cantidad || 0;
 
             const dias = ["Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado", "Domingo"];
             for(let d of dias) {
                 const snap = await getDoc(doc(db, "configuracion", d));
-                const data = snap.exists() ? snap.data() : {abierto: false, cierre: "No definido"};
+                const data = snap.exists() ? snap.data() : {abierto: false, cierre: "No definido", limite: 0};
                 divHor.innerHTML += `<div>${d}: <button onclick="toggleDia('${d}')">${data.abierto ? 'Abierto' : 'Cerrado'}</button> 
-                Cierre: <span onclick="actualizarCierre('${d}')" style="cursor:pointer; color:blue;">${data.cierre}</span></div>`;
+                Cierre: <span onclick="actualizarCierre('${d}')" style="cursor:pointer; color:blue;">${data.cierre}</span>
+                Máx: <input type="number" id="lim-${d}" value="${data.limite || 0}" style="width:50px">
+                <button onclick="guardarLimiteDia('${d}', 'lim-${d}')">Aceptar</button></div>`;
             }
 
             (await getDocs(collection(db, "citas"))).forEach(d => {
