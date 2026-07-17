@@ -2,13 +2,14 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <title>Panel Administrativo Pro</title>
+    <title>cccc Panel Administrativo Pro</title>
     <style>
         body { font-family: sans-serif; padding: 20px; }
         .tab { display: none; padding: 20px; border: 1px solid #ddd; }
         .active { display: block; }
         .cat-box { border: 2px solid #333; padding: 15px; margin-bottom: 20px; border-radius: 8px; }
         .sub-box { margin-left: 20px; padding: 5px; border-bottom: 1px solid #eee; }
+        .dia-box { display: inline-block; padding: 10px; margin: 5px; border: 1px solid #ccc; border-radius: 5px; }
         #login-box { text-align: center; margin-top: 50px; }
         nav button { padding: 10px; cursor: pointer; }
     </style>
@@ -34,6 +35,9 @@
         </div>
 
         <div id="tab-modificar" class="tab">
+            <h1>Gestión de Días Laborales</h1>
+            <div id="lista-dias" style="margin-bottom: 30px;">Cargando días...</div>
+            
             <h1>Gestión de Estructura</h1>
             <input type="text" id="cat-nombre" placeholder="Nombre categoría (Ej: Uñas)">
             <button onclick="agregarCategoria()">Crear Categoría</button>
@@ -44,7 +48,7 @@
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/12.16.0/firebase-app.js";
         import { getAuth, signInWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/12.16.0/firebase-auth.js";
-        import { getFirestore, collection, getDocs, addDoc, deleteDoc, doc, updateDoc, query, where } from "https://www.gstatic.com/firebasejs/12.16.0/firebase-firestore.js";
+        import { getFirestore, collection, getDocs, addDoc, deleteDoc, doc, updateDoc, query, where, getDoc, setDoc } from "https://www.gstatic.com/firebasejs/12.16.0/firebase-firestore.js";
 
         const firebaseConfig = {
             apiKey: "AIzaSyDCN2ah_fSjW385KgAb48W8Cd9PhFDOQJ0",
@@ -63,6 +67,49 @@
             document.getElementById(id).classList.add('active');
         };
 
+        // Función para cambiar estado de días
+        window.toggleDia = async (dia, estadoActual) => {
+            await setDoc(doc(db, "dias_activos", dia), { activo: !estadoActual });
+            cargarDatos();
+        };
+
+        async function cargarDatos() {
+            // Cargar días
+            const diasSemana = ["lunes", "martes", "miercoles", "jueves", "viernes", "sabado", "domingo"];
+            const divDias = document.getElementById('lista-dias');
+            divDias.innerHTML = "";
+            for (const dia of diasSemana) {
+                const snap = await getDoc(doc(db, "dias_activos", dia));
+                const activo = snap.exists() ? snap.data().activo : false;
+                divDias.innerHTML += `<div class="dia-box" style="background:${activo ? '#d4af37' : '#eee'}">
+                    ${dia.toUpperCase()}<br>
+                    <button onclick="toggleDia('${dia}', ${activo})">${activo ? 'Cerrar' : 'Abrir'}</button>
+                </div>`;
+            }
+
+            // Cargar categorías (código existente)
+            const catSnap = await getDocs(collection(db, "categorias"));
+            const servSnap = await getDocs(collection(db, "servicios"));
+            const div = document.getElementById('lista-categorias');
+            div.innerHTML = "";
+            catSnap.forEach(catDoc => {
+                const cat = catDoc.data().nombre;
+                div.innerHTML += `<div class="cat-box">
+                    <strong>Categoría: ${cat}</strong>
+                    <button onclick="agregarSub('${cat}')">Agregar Sub-servicio</button>
+                    <button onclick="modificarCategoria('${catDoc.id}', '${cat}')">Modificar</button>
+                    <button onclick="eliminarCategoria('${catDoc.id}', '${cat}')" style="background:red; color:white;">Borrar Categoría</button>
+                    <div id="sub-${catDoc.id}"></div>
+                </div>`;
+                servSnap.forEach(sDoc => {
+                    if(sDoc.data().categoria === cat) {
+                        document.getElementById(`sub-${catDoc.id}`).innerHTML += 
+                        `<div class="sub-box">- ${sDoc.data().nombre} <button onclick="eliminar('${sDoc.id}')">Eliminar</button></div>`;
+                    }
+                });
+            });
+        }
+
         window.agregarCategoria = async () => {
             const nombre = document.getElementById('cat-nombre').value;
             if(nombre) { await addDoc(collection(db, "categorias"), { nombre }); cargarDatos(); }
@@ -80,40 +127,13 @@
 
         window.eliminarCategoria = async (id, catNombre) => {
             if(confirm("¿Borrar esta categoría y todos sus sub-servicios?")) {
-                // Borrar sub-servicios asociados
                 const q = query(collection(db, "servicios"), where("categoria", "==", catNombre));
                 const querySnapshot = await getDocs(q);
                 querySnapshot.forEach(async (sDoc) => await deleteDoc(sDoc.ref));
-                // Borrar categoría
                 await deleteDoc(doc(db, "categorias", id));
                 cargarDatos();
             }
         };
-
-        async function cargarDatos() {
-            const catSnap = await getDocs(collection(db, "categorias"));
-            const servSnap = await getDocs(collection(db, "servicios"));
-            const div = document.getElementById('lista-categorias');
-            div.innerHTML = "";
-            
-            catSnap.forEach(catDoc => {
-                const cat = catDoc.data().nombre;
-                div.innerHTML += `<div class="cat-box">
-                    <strong>Categoría: ${cat}</strong>
-                    <button onclick="agregarSub('${cat}')">Agregar Sub-servicio</button>
-                    <button onclick="modificarCategoria('${catDoc.id}', '${cat}')">Modificar</button>
-                    <button onclick="eliminarCategoria('${catDoc.id}', '${cat}')" style="background:red; color:white;">Borrar Categoría</button>
-                    <div id="sub-${catDoc.id}"></div>
-                </div>`;
-                
-                servSnap.forEach(sDoc => {
-                    if(sDoc.data().categoria === cat) {
-                        document.getElementById(`sub-${catDoc.id}`).innerHTML += 
-                        `<div class="sub-box">- ${sDoc.data().nombre} <button onclick="eliminar('${sDoc.id}')">Eliminar</button></div>`;
-                    }
-                });
-            });
-        }
 
         window.eliminar = async (id) => { await deleteDoc(doc(db, "servicios", id)); cargarDatos(); };
 
