@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <title>Reserva de Citas - Salon Beauty</title>
+    <title>111 Reserva de Citas - Salon Beauty</title>
     <style>
         body { background-image: url('fondo-unas.png'); background-size: cover; background-position: center; min-height: 100vh; margin: 0; font-family: sans-serif; }
         .container { background: rgba(255, 255, 255, 0.95); padding: 30px; border-radius: 15px; max-width: 600px; margin: 40px auto; }
@@ -24,7 +24,6 @@
             <input type="text" id="nombre" placeholder="Nombre">
             <input type="text" id="apellido" placeholder="Apellido">
             <input type="tel" id="telefono" placeholder="Teléfono">
-            <input type="time" id="hora-cita" onchange="validarHora()">
             <button onclick="confirmarCita()">Confirmar Reserva</button>
         </div>
     </div>
@@ -90,19 +89,9 @@
             document.getElementById('formulario-reserva').style.display = "block";
         };
 
-        window.validarHora = async () => {
-            const hora = document.getElementById('hora-cita').value;
-            const config = await getDoc(doc(db, "config", "horario"));
-            if (config.exists() && hora > config.data().cierre) {
-                alert("La hora supera el cierre del día.");
-                document.getElementById('hora-cita').value = "";
-            }
-        };
-
         window.confirmarCita = async () => {
             await addDoc(collection(db, "citas"), {
                 fecha: document.getElementById('fecha-cita').value,
-                hora: document.getElementById('hora-cita').value,
                 nombre: document.getElementById('nombre').value,
                 apellido: document.getElementById('apellido').value,
                 telefono: document.getElementById('telefono').value,
