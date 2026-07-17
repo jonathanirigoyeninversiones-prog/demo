@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <title>zzz Panel Administrativo</title>
+    <title>Panel Administrativo</title>
     <style>
         body { font-family: sans-serif; padding: 20px; }
         #login-box { display: flex; flex-direction: column; align-items: center; justify-content: center; height: 80vh; }
@@ -32,7 +32,7 @@
         
         <div id="tab-clientes" class="tab active">
             <button onclick="cargarDatos()">Refrescar</button>
-            <table><thead><tr><th>Fecha</th><th>Nombre</th><th>Tel</th><th>Servicio</th><th>Acciones</th></tr></thead><tbody id="lista-citas"></tbody></table>
+            <table><thead><tr><th>Fecha</th><th>Nombre</th><th>Apellido</th><th>Tel</th><th>Dirección</th><th>Servicio</th><th>Acciones</th></tr></thead><tbody id="lista-citas"></tbody></table>
         </div>
         
         <div id="tab-modificar" class="tab">
@@ -112,7 +112,13 @@
 
             (await getDocs(collection(db, "citas"))).forEach(d => {
                 const c = d.data();
-                tbody.innerHTML += `<tr class="${c.confirmado ? 'confirmado' : ''}"><td>${c.fecha}</td><td>${c.nombre}</td><td>${c.telefono}</td><td>${c.subcategoria}</td>
+                tbody.innerHTML += `<tr class="${c.confirmado ? 'confirmado' : ''}">
+                <td>${c.fecha || ''}</td>
+                <td>${c.nombre || ''}</td>
+                <td>${c.apellido || ''}</td>
+                <td>${c.telefono || ''}</td>
+                <td>${c.direccion || ''}</td>
+                <td>${c.subcategoria || ''}</td>
                 <td><button onclick="confirmarCita('${d.id}')">Confirmar</button>
                 <button onclick="gestionarCita('${d.id}', 'listo')">Listo</button>
                 <button onclick="gestionarCita('${d.id}', 'cancelar')">Cancelar</button></td></tr>`;
@@ -143,7 +149,7 @@
                 document.getElementById('login-box').style.display = 'none';
                 document.getElementById('admin-panel').style.display = 'block';
                 cargarDatos();
-                setInterval(cargarDatos, 30000); // Refresco automático cada 30 segundos
+                setInterval(cargarDatos, 30000); 
             } catch (e) { alert("Error de acceso"); }
         });
     </script>
