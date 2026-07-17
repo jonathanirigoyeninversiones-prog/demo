@@ -2,55 +2,36 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <title>ccc Reserva de Citas - Salon Beauty</title>
+    <title>Reserva de Citas - Salon Beauty</title>
     <style>
-        body {
-            background-image: url('fondo-unas.png');
-            background-size: cover;
-            background-position: center;
-            background-attachment: fixed;
-            background-repeat: no-repeat;
-            min-height: 100vh;
-            margin: 0;
-            font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
-            color: #333;
-        }
-        #calendario-container, #formulario-reserva { background: rgba(255, 255, 255, 0.95); padding: 40px; border-radius: 15px; max-width: 450px; margin: 40px auto; box-shadow: 0 10px 25px rgba(0,0,0,0.1); }
-        h3 { color: #444; margin-top: 0; }
-        input { width: 100%; padding: 12px; margin-bottom: 15px; border: 1px solid #ddd; border-radius: 5px; box-sizing: border-box; }
-        button { width: 100%; padding: 15px; background: #d4af37; color: white; border: none; border-radius: 5px; font-weight: bold; cursor: pointer; }
-        #modal-confirmacion { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); justify-content: center; align-items: center; }
-        .modal-contenido { background: white; padding: 40px; border-radius: 15px; text-align: center; max-width: 350px; }
+        body { background-image: url('fondo-unas.png'); background-size: cover; background-position: center; min-height: 100vh; margin: 0; font-family: sans-serif; }
+        .container { background: rgba(255, 255, 255, 0.95); padding: 30px; border-radius: 15px; max-width: 600px; margin: 40px auto; }
+        .btn-cat, .btn-sub { padding: 10px; margin: 5px; cursor: pointer; border: 1px solid #d4af37; background: #fff; border-radius: 5px; }
+        .btn-cat:hover, .btn-sub:hover { background: #d4af37; color: #fff; }
+        input { width: 100%; padding: 10px; margin: 10px 0; border: 1px solid #ddd; border-radius: 5px; }
     </style>
 </head>
 <body>
 
-    <div id="calendario-container">
-        <h3>Seleccione su fecha</h3>
+    <div class="container">
+        <h3>Reserva tu cita</h3>
         <input type="date" id="fecha-cita" onchange="validarDia()">
-        <div id="horarios-container" style="margin-top: 15px;"></div>
-    </div>
-
-    <div id="formulario-reserva" style="display:none;">
-        <h3>Sus datos</h3>
-        <input type="text" id="nombre" placeholder="Nombre" required>
-        <input type="text" id="apellido" placeholder="Apellido" required>
-        <input type="tel" id="telefono" placeholder="Teléfono" required>
-        <input type="text" id="direccion" placeholder="Dirección" required>
-        <button onclick="confirmarCita()">Confirmar Reserva</button>
-    </div>
-
-    <div id="modal-confirmacion">
-        <div class="modal-contenido">
-            <h3>¡Gracias por confiar en nosotros!</h3>
-            <p>Muy pronto le contactaremos para confirmar los detalles de su cita.</p>
-            <button onclick="location.reload()">Aceptar</button>
+        <div id="msg-dia"></div>
+        <div id="categorias-container" style="display:none; margin-top: 20px;"></div>
+        <div id="subcategorias-container" style="display:none; margin-top: 20px;"></div>
+        
+        <div id="formulario-reserva" style="display:none; margin-top: 20px;">
+            <input type="text" id="nombre" placeholder="Nombre">
+            <input type="text" id="apellido" placeholder="Apellido">
+            <input type="tel" id="telefono" placeholder="Teléfono">
+            <input type="time" id="hora-cita" onchange="validarHora()">
+            <button onclick="confirmarCita()">Confirmar Reserva</button>
         </div>
     </div>
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/12.16.0/firebase-app.js";
-        import { getFirestore, doc, getDoc, collection, addDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/12.16.0/firebase-firestore.js";
+        import { getFirestore, doc, getDoc, collection, getDocs, addDoc } from "https://www.gstatic.com/firebasejs/12.16.0/firebase-firestore.js";
 
         const firebaseConfig = {
             apiKey: "AIzaSyDCN2ah_fSjW385KgAb48W8Cd9PhFDOQJ0",
@@ -62,46 +43,74 @@
         };
 
         const db = getFirestore(initializeApp(firebaseConfig));
+        window.selCat = ""; window.selSub = "";
 
-        window.categoriaActual = "Servicio General";
+        document.getElementById('fecha-cita').min = new Date().toISOString().split('T')[0];
 
-        document.getElementById('fecha-cita').min = new Date().toLocaleDateString('en-CA', { timeZone: 'America/Caracas' });
-        
         window.validarDia = async () => {
-            const inputFecha = document.getElementById('fecha-cita').value;
-            if (!inputFecha) return;
+            const fecha = document.getElementById('fecha-cita').value;
+            const diaNombre = ["domingo", "lunes", "martes", "miercoles", "jueves", "viernes", "sabado"][new Date(fecha + 'T00:00:00').getDay()];
+            const snap = await getDoc(doc(db, "dias_activos", diaNombre));
+            
+            if (snap.exists() && snap.data().activo) {
+                document.getElementById('msg-dia').innerHTML = "Día disponible.";
+                cargarCategorias();
+            } else {
+                document.getElementById('msg-dia').innerHTML = "Día no disponible.";
+            }
+        };
 
-            const dias = ["domingo", "lunes", "martes", "miercoles", "jueves", "viernes", "sabado"];
-            const fechaObj = new Date(inputFecha + 'T00:00:00');
-            const nombreDia = dias[fechaObj.getDay()];
-            const container = document.getElementById('horarios-container');
-            container.innerHTML = `Verificando disponibilidad...`;
+        async function cargarCategorias() {
+            const container = document.getElementById('categorias-container');
+            container.style.display = "block";
+            container.innerHTML = "Seleccione categoría: ";
+            const snaps = await getDocs(collection(db, "categorias"));
+            snaps.forEach(doc => {
+                const nombre = doc.data().nombre;
+                container.innerHTML += `<button class="btn-cat" onclick="cargarSubs('${nombre}')">${nombre}</button>`;
+            });
+        }
 
-            try {
-                const diaActivoSnap = await getDoc(doc(db, "dias_activos", nombreDia));
-                if (diaActivoSnap.exists() && diaActivoSnap.data().activo) {
-                    container.innerHTML = `<p style="color:green;">Día disponible. ¡Puede proceder!</p>`;
-                    document.getElementById('formulario-reserva').style.display = 'block';
-                } else {
-                    container.innerHTML = `<p style="color:red;">Lo sentimos, este día no laboramos.</p>`;
-                    document.getElementById('formulario-reserva').style.display = 'none';
+        window.cargarSubs = async (cat) => {
+            window.selCat = cat;
+            const container = document.getElementById('subcategorias-container');
+            container.style.display = "block";
+            container.innerHTML = "Seleccione servicio: ";
+            const snaps = await getDocs(collection(db, "servicios"));
+            snaps.forEach(doc => {
+                const data = doc.data();
+                if(data.categoria === cat) {
+                    container.innerHTML += `<button class="btn-sub" onclick="prepararForm('${data.nombre}')">${data.nombre}</button>`;
                 }
-            } catch (e) { container.innerHTML = `<p>Error: ${e.message}</p>`; }
+            });
+        };
+
+        window.prepararForm = (sub) => {
+            window.selSub = sub;
+            document.getElementById('formulario-reserva').style.display = "block";
+        };
+
+        window.validarHora = async () => {
+            const hora = document.getElementById('hora-cita').value;
+            const config = await getDoc(doc(db, "config", "horario"));
+            if (config.exists() && hora > config.data().cierre) {
+                alert("La hora supera el cierre del día.");
+                document.getElementById('hora-cita').value = "";
+            }
         };
 
         window.confirmarCita = async () => {
-            const datos = {
+            await addDoc(collection(db, "citas"), {
+                fecha: document.getElementById('fecha-cita').value,
+                hora: document.getElementById('hora-cita').value,
                 nombre: document.getElementById('nombre').value,
                 apellido: document.getElementById('apellido').value,
                 telefono: document.getElementById('telefono').value,
-                direccion: document.getElementById('direccion').value,
-                categoria: window.categoriaActual,
-                fecha: document.getElementById('fecha-cita').value
-            };
-            try {
-                await addDoc(collection(db, "citas"), datos);
-                document.getElementById('modal-confirmacion').style.display = 'flex';
-            } catch (e) { alert("Error al guardar: " + e.message); }
+                categoria: window.selCat,
+                subcategoria: window.selSub
+            });
+            alert("Cita reservada.");
+            location.reload();
         };
     </script>
 </body>
