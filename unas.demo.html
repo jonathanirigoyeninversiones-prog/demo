@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <title>111 Reserva de Citas - Salon Beauty</title>
+    <title>ccc Reserva de Citas - Salon Beauty</title>
     <style>
         body {
             background-image: url('fondo-unas.png');
@@ -17,9 +17,6 @@
         }
         #calendario-container, #formulario-reserva { background: rgba(255, 255, 255, 0.95); padding: 40px; border-radius: 15px; max-width: 450px; margin: 40px auto; box-shadow: 0 10px 25px rgba(0,0,0,0.1); }
         h3 { color: #444; margin-top: 0; }
-        .hora-btn { width: 100%; margin: 8px 0; padding: 12px; cursor: pointer; background: #fff; border: 1px solid #d4af37; border-radius: 5px; color: #d4af37; font-weight: bold; transition: all 0.3s; }
-        .hora-btn:hover { background: #d4af37; color: white; }
-        .hora-btn:disabled { border-color: #ccc; color: #ccc; background: #f9f9f9; }
         input { width: 100%; padding: 12px; margin-bottom: 15px; border: 1px solid #ddd; border-radius: 5px; box-sizing: border-box; }
         button { width: 100%; padding: 15px; background: #d4af37; color: white; border: none; border-radius: 5px; font-weight: bold; cursor: pointer; }
         #modal-confirmacion { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); justify-content: center; align-items: center; }
@@ -30,8 +27,8 @@
 
     <div id="calendario-container">
         <h3>Seleccione su fecha</h3>
-        <input type="date" id="fecha-cita" onchange="cargarHorarios()">
-        <div id="horarios-container"></div>
+        <input type="date" id="fecha-cita" onchange="validarDia()">
+        <div id="horarios-container" style="margin-top: 15px;"></div>
     </div>
 
     <div id="formulario-reserva" style="display:none;">
@@ -53,7 +50,7 @@
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/12.16.0/firebase-app.js";
-        import { getFirestore, doc, getDoc, collection, addDoc, query, where, getDocs, onSnapshot } from "https://www.gstatic.com/firebasejs/12.16.0/firebase-firestore.js";
+        import { getFirestore, doc, getDoc, collection, addDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/12.16.0/firebase-firestore.js";
 
         const firebaseConfig = {
             apiKey: "AIzaSyDCN2ah_fSjW385KgAb48W8Cd9PhFDOQJ0",
@@ -66,24 +63,11 @@
 
         const db = getFirestore(initializeApp(firebaseConfig));
 
-        // --- VIGILANTE DE ESTADO ---
-        const docRef = doc(db, "clientes_servicios", "unasdani");
-        onSnapshot(docRef, (docSnap) => {
-            if (docSnap.exists() && docSnap.data().activo === false) {
-                document.body.innerHTML = `
-                    <div style="text-align:center; padding: 100px; font-family: sans-serif;">
-                        <h1>Servicio Temporalmente Inactivo</h1>
-                        <p>Este sitio no se encuentra disponible en este momento.</p>
-                    </div>`;
-            }
-        });
-
         window.categoriaActual = "Servicio General";
-        window.horaSeleccionada = "";
 
         document.getElementById('fecha-cita').min = new Date().toLocaleDateString('en-CA', { timeZone: 'America/Caracas' });
         
-        window.cargarHorarios = async () => {
+        window.validarDia = async () => {
             const inputFecha = document.getElementById('fecha-cita').value;
             if (!inputFecha) return;
 
@@ -91,33 +75,18 @@
             const fechaObj = new Date(inputFecha + 'T00:00:00');
             const nombreDia = dias[fechaObj.getDay()];
             const container = document.getElementById('horarios-container');
-            container.innerHTML = `Cargando...`;
+            container.innerHTML = `Verificando disponibilidad...`;
 
             try {
                 const diaActivoSnap = await getDoc(doc(db, "dias_activos", nombreDia));
-                if (!diaActivoSnap.exists() || !diaActivoSnap.data().activo) {
-                    container.innerHTML = `<p>Lo sentimos, hoy no laboramos.</p>`;
-                    return;
-                }
-
-                const horDoc = await getDoc(doc(db, "horarios", nombreDia));
-                const citasSnap = await getDocs(query(collection(db, "citas"), where("fecha", "==", inputFecha)));
-                const horasOcupadas = citasSnap.docs.map(doc => doc.data().hora);
-
-                if (horDoc.exists()) {
-                    const listaHoras = horDoc.data().lista;
-                    container.innerHTML = `<h4>Horarios para el ${nombreDia}:</h4>`;
-                    listaHoras.forEach(hora => {
-                        const estaOcupada = horasOcupadas.includes(hora);
-                        container.innerHTML += `<button class="hora-btn" ${estaOcupada ? 'disabled' : ''} onclick="abrirFormulario('${hora}')">${hora} ${estaOcupada ? '(Reservado)' : ''}</button>`;
-                    });
+                if (diaActivoSnap.exists() && diaActivoSnap.data().activo) {
+                    container.innerHTML = `<p style="color:green;">Día disponible. ¡Puede proceder!</p>`;
+                    document.getElementById('formulario-reserva').style.display = 'block';
+                } else {
+                    container.innerHTML = `<p style="color:red;">Lo sentimos, este día no laboramos.</p>`;
+                    document.getElementById('formulario-reserva').style.display = 'none';
                 }
             } catch (e) { container.innerHTML = `<p>Error: ${e.message}</p>`; }
-        };
-
-        window.abrirFormulario = (hora) => {
-            window.horaSeleccionada = hora;
-            document.getElementById('formulario-reserva').style.display = 'block';
         };
 
         window.confirmarCita = async () => {
@@ -127,8 +96,7 @@
                 telefono: document.getElementById('telefono').value,
                 direccion: document.getElementById('direccion').value,
                 categoria: window.categoriaActual,
-                fecha: document.getElementById('fecha-cita').value,
-                hora: window.horaSeleccionada
+                fecha: document.getElementById('fecha-cita').value
             };
             try {
                 await addDoc(collection(db, "citas"), datos);
