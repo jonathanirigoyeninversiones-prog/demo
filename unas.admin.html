@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <title>zzzPanel Administrativo Pro</title>
+    <title>Panel Administrativo Pro</title>
     <style>
         body { font-family: sans-serif; padding: 20px; }
         .tab { display: none; padding: 20px; border: 1px solid #ddd; }
@@ -54,7 +54,17 @@
         import { getAuth, signInWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/12.16.0/firebase-auth.js";
         import { getFirestore, collection, getDocs, addDoc, deleteDoc, doc } from "https://www.gstatic.com/firebasejs/12.16.0/firebase-firestore.js";
 
-        const db = getFirestore(initializeApp({ /* ... Tu config igual ... */ }));
+        // --- PEGA TUS CREDENCIALES AQUI ---
+        const firebaseConfig = {
+            apiKey: "AIzaSyDCN2ah_fSjW385KgAb48W8Cd9PhFDOQJ0",
+            authDomain: "estilista-demo.firebaseapp.com",
+            projectId: "estilista-demo",
+            storageBucket: "estilista-demo.firebasestorage.app",
+            messagingSenderId: "652196958867",
+            appId: "1:652196958867:web:1c860102aa769ea6787366"
+        };
+
+        const db = getFirestore(initializeApp(firebaseConfig));
         const auth = getAuth();
 
         window.mostrarTab = (id) => {
@@ -78,13 +88,11 @@
         };
 
         async function cargarDatos() {
-            // Cargar categorías al select
             const catSnap = await getDocs(collection(db, "categorias"));
             const select = document.getElementById('select-cat');
             select.innerHTML = "";
             catSnap.forEach(doc => select.innerHTML += `<option value="${doc.data().nombre}">${doc.data().nombre}</option>`);
 
-            // Cargar estructura completa
             const servSnap = await getDocs(collection(db, "servicios"));
             const lista = document.getElementById('lista-estructurada');
             lista.innerHTML = "<h4>Servicios actuales:</h4>";
@@ -98,10 +106,12 @@
         window.eliminar = async (id, col) => { await deleteDoc(doc(db, col, id)); cargarDatos(); };
 
         document.getElementById('btn-entrar').addEventListener('click', async () => {
-            await signInWithEmailAndPassword(auth, document.getElementById('user').value, document.getElementById('pass').value);
-            document.getElementById('login-box').style.display = 'none';
-            document.getElementById('admin-panel').style.display = 'block';
-            cargarDatos();
+            try {
+                await signInWithEmailAndPassword(auth, document.getElementById('user').value, document.getElementById('pass').value);
+                document.getElementById('login-box').style.display = 'none';
+                document.getElementById('admin-panel').style.display = 'block';
+                cargarDatos();
+            } catch (e) { alert("Error de acceso: " + e.message); }
         });
     </script>
 </body>
