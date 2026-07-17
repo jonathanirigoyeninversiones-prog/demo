@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <title>111 Panel Administrativo</title>
+    <title>Panel Administrativo</title>
     <style>
         body { font-family: sans-serif; padding: 20px; }
         #login-box { display: flex; flex-direction: column; align-items: center; justify-content: center; height: 80vh; }
@@ -53,16 +53,21 @@
 
         window.gestionarCita = async (id, destino) => {
             const snap = await getDocs(collection(db, "citas"));
-            const data = snap.docs.find(d => d.id === id).data();
-            await addDoc(collection(db, destino), data);
-            await deleteDoc(doc(db, "citas", id));
+            const docRef = snap.docs.find(d => d.id === id);
+            if(docRef) {
+                await addDoc(collection(db, destino), docRef.data());
+                await deleteDoc(doc(db, "citas", id));
+            }
             cargarDatos();
         };
 
         window.cargarDatos = async () => {
             const tbody = document.getElementById('lista-citas');
+            const divCat = document.getElementById('lista-categorias');
             tbody.innerHTML = "";
+            divCat.innerHTML = "";
             
+            // Cargar citas
             (await getDocs(collection(db, "citas"))).forEach(d => {
                 const c = d.data();
                 const clase = c.confirmado ? 'class="confirmado"' : '';
@@ -72,6 +77,11 @@
                     <button onclick="gestionarCita('${d.id}', 'listo')">Listo</button>
                     <button onclick="gestionarCita('${d.id}', 'cancelar')">Cancelar</button>
                 </td></tr>`;
+            });
+
+            // Cargar categorías
+            (await getDocs(collection(db, "categorias"))).forEach((catDoc) => {
+                divCat.innerHTML += `<div class="cat-box"><strong>${catDoc.data().nombre}</strong></div>`;
             });
         };
         
