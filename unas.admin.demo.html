@@ -2,161 +2,62 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <title>Panel Administrativo Pro</title>
+    <title>zzz Panel Administrativo Pro</title>
     <style>
         body { font-family: sans-serif; padding: 20px; }
         .tab { display: none; padding: 20px; border: 1px solid #ddd; }
         .active { display: block; }
-        .cat-box { border: 2px solid #333; padding: 15px; margin-bottom: 20px; border-radius: 8px; }
-        .sub-box { margin-left: 20px; padding: 5px; border-bottom: 1px solid #eee; }
-        .dia-box { display: inline-block; padding: 10px; margin: 5px; border: 1px solid #ccc; border-radius: 5px; }
         table { width: 100%; border-collapse: collapse; margin-top: 10px; }
         th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
-        th { background-color: #f4f4f4; }
         .confirmado { background-color: #d4edda !important; }
-        #login-box { text-align: center; margin-top: 50px; }
-        nav button { padding: 10px; cursor: pointer; }
     </style>
 </head>
 <body>
-
     <div id="login-box">
-        <h3>Acceso Administrativo</h3>
-        <input type="email" id="user" placeholder="Correo">
-        <input type="password" id="pass" placeholder="Contraseña">
+        <input type="email" id="user" placeholder="Correo"><input type="password" id="pass" placeholder="Contraseña">
         <button id="btn-entrar">Entrar</button>
     </div>
-
     <div id="admin-panel" style="display:none;">
-        <nav>
-            <button onclick="mostrarTab('tab-clientes')">Clientes</button>
-            <button onclick="mostrarTab('tab-modificar')">Modificar</button>
-        </nav>
-
+        <button onclick="mostrarTab('tab-clientes')">Clientes</button>
+        <button onclick="mostrarTab('tab-modificar')">Modificar</button>
         <div id="tab-clientes" class="tab active">
-            <h1>Citas</h1>
-            <button onclick="cargarDatos()">Refrescar</button>
-            <table id="tabla-citas">
-                <thead>
-                    <tr><th>Fecha</th><th>Nombre</th><th>Apellido</th><th>Teléfono</th><th>Cat</th><th>Sub</th><th>Acciones</th></tr>
-                </thead>
-                <tbody id="lista-citas"></tbody>
-            </table>
+            <table><thead><tr><th>Fecha</th><th>Nombre</th><th>Tel</th><th>Dir</th><th>Servicio</th><th>Acciones</th></tr></thead><tbody id="lista-citas"></tbody></table>
         </div>
-
         <div id="tab-modificar" class="tab">
-            <h1>Gestión de Horario</h1>
-            <input type="time" id="hora-cierre-input">
-            <button onclick="guardarHoraCierre()">Guardar Hora Cierre</button>
-            <h1>Gestión de Días Laborales</h1>
-            <div id="lista-dias" style="margin-bottom: 30px;"></div>
             <h1>Gestión de Estructura</h1>
-            <input type="text" id="cat-nombre" placeholder="Nombre categoría">
-            <button onclick="agregarCategoria()">Crear Categoría</button>
-            <div id="lista-categorias" style="margin-top:20px;"></div>
+            <div id="lista-categorias"></div>
         </div>
     </div>
-
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/12.16.0/firebase-app.js";
         import { getAuth, signInWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/12.16.0/firebase-auth.js";
-        import { getFirestore, collection, getDocs, addDoc, deleteDoc, doc, setDoc, getDoc, updateDoc } from "https://www.gstatic.com/firebasejs/12.16.0/firebase-firestore.js";
-
-        const firebaseConfig = {
-            apiKey: "AIzaSyDCN2ah_fSjW385KgAb48W8Cd9PhFDOQJ0",
-            authDomain: "estilista-demo.firebaseapp.com",
-            projectId: "estilista-demo",
-            storageBucket: "estilista-demo.firebasestorage.app",
-            messagingSenderId: "652196958867",
-            appId: "1:652196958867:web:1c860102aa769ea6787366"
-        };
-        const db = getFirestore(initializeApp(firebaseConfig));
-        const auth = getAuth();
-
-        window.mostrarTab = (id) => {
-            document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
-            document.getElementById(id).classList.add('active');
-        };
-
+        import { getFirestore, collection, getDocs, doc, setDoc, deleteDoc, updateDoc, addDoc } from "https://www.gstatic.com/firebasejs/12.16.0/firebase-firestore.js";
+        const db = getFirestore(initializeApp({apiKey: "AIzaSyDCN2ah_fSjW385KgAb48W8Cd9PhFDOQJ0", authDomain: "estilista-demo.firebaseapp.com", projectId: "estilista-demo", storageBucket: "estilista-demo.firebasestorage.app", messagingSenderId: "652196958867", appId: "1:652196958867:web:1c860102aa769ea6787366"}));
+        
         window.cargarDatos = async () => {
-            const citasSnap = await getDocs(collection(db, "citas"));
             const tbody = document.getElementById('lista-citas');
             tbody.innerHTML = "";
-            citasSnap.forEach(doc => {
-                const c = doc.data();
-                const id = doc.id;
-                const clase = c.confirmado ? 'class="confirmado"' : '';
-                tbody.innerHTML += `<tr ${clase} id="row-${id}">
-                    <td>${c.fecha}</td><td>${c.nombre}</td><td>${c.apellido}</td><td>${c.telefono}</td><td>${c.categoria}</td><td>${c.subcategoria}</td>
-                    <td>
-                        <button onclick="gestionarCita('${id}', 'confirmar')">Confirmar</button>
-                        <button onclick="gestionarCita('${id}', 'listo')">Listo</button>
-                        <button onclick="gestionarCita('${id}', 'cancelado')">Cancelado</button>
-                    </td>
-                </tr>`;
-            });
-
-            const confSnap = await getDoc(doc(db, "config", "horario"));
-            if (confSnap.exists()) document.getElementById('hora-cierre-input').value = confSnap.data().cierre;
-
-            const diasSemana = ["lunes", "martes", "miercoles", "jueves", "viernes", "sabado", "domingo"];
-            const divDias = document.getElementById('lista-dias');
-            divDias.innerHTML = "";
-            for (const dia of diasSemana) {
-                const snap = await getDoc(doc(db, "dias_activos", dia));
-                const activo = snap.exists() ? snap.data().activo : false;
-                divDias.innerHTML += `<div class="dia-box" style="background:${activo ? '#d4af37' : '#eee'}">
-                    ${dia.toUpperCase()}<br><button onclick="toggleDia('${dia}', ${activo})">${activo ? 'Cerrar' : 'Abrir'}</button>
-                </div>`;
-            }
-
-            const catSnap = await getDocs(collection(db, "categorias"));
-            const servSnap = await getDocs(collection(db, "servicios"));
-            const divCat = document.getElementById('lista-categorias');
-            divCat.innerHTML = "";
-            catSnap.forEach(catDoc => {
-                const cat = catDoc.data().nombre;
-                divCat.innerHTML += `<div class="cat-box"><strong>Categoría: ${cat}</strong>
-                    <button onclick="editarElemento('categorias', '${catDoc.id}', '${cat}')">Editar</button>
-                    <button onclick="agregarSub('${cat}')">Sub-servicio</button>
-                    <button onclick="eliminarCategoria('${catDoc.id}')" style="background:red; color:white;">Borrar</button>
-                    <div id="sub-${catDoc.id}"></div></div>`;
-                servSnap.forEach(sDoc => {
-                    if(sDoc.data().categoria === cat) document.getElementById(`sub-${catDoc.id}`).innerHTML += `<div class="sub-box">- ${sDoc.data().nombre} <button onclick="editarElemento('servicios', '${sDoc.id}', '${sDoc.data().nombre}')">Editar</button> <button onclick="eliminar('${sDoc.id}')">Eliminar</button></div>`;
-                });
+            (await getDocs(collection(db, "citas"))).forEach(d => {
+                const c = d.data();
+                tbody.innerHTML += `<tr><td>${c.fecha}</td><td>${c.nombre} ${c.apellido}</td><td>${c.telefono}</td><td>${c.direccion || 'N/A'}</td><td>${c.subcategoria}</td>
+                <td>
+                    <button onclick="window.location.href='https://wa.me/${c.telefono}?text=Hola, confirmamos su cita para el ${c.fecha}'">WhatsApp</button>
+                    <button onclick="gestionar('${d.id}', 'listo')">Listo</button>
+                </td></tr>`;
             });
         };
-
-        setInterval(cargarDatos, 30000);
-
-        window.editarElemento = async (col, id, actual) => {
-            const nuevo = prompt("Nuevo nombre:", actual);
-            if (nuevo) { await updateDoc(doc(db, col, id), { nombre: nuevo }); cargarDatos(); }
+        window.gestionar = async (id, col) => {
+            const snap = await getDocs(collection(db, "citas"));
+            const data = snap.docs.find(d => d.id === id).data();
+            await addDoc(collection(db, col), data);
+            await deleteDoc(doc(db, "citas", id));
+            cargarDatos();
         };
-
-        window.gestionarCita = async (id, accion) => {
-            const docRef = doc(db, "citas", id);
-            const docSnap = await getDoc(docRef);
-            const data = docSnap.data();
-            if (accion === 'confirmar') { await setDoc(docRef, { ...data, confirmado: true }); cargarDatos(); }
-            else if (accion === 'listo') { await addDoc(collection(db, "listo"), data); await deleteDoc(docRef); cargarDatos(); }
-            else if (accion === 'cancelado') { await addDoc(collection(db, "cancelado"), data); await deleteDoc(docRef); cargarDatos(); }
-        };
-
-        window.toggleDia = async (dia, activo) => { await setDoc(doc(db, "dias_activos", dia), { activo: !activo }); cargarDatos(); };
-        window.guardarHoraCierre = async () => { const hora = document.getElementById('hora-cierre-input').value; await setDoc(doc(db, "config", "horario"), { cierre: hora }); alert("Hora guardada."); };
-        window.agregarCategoria = async () => { const nombre = document.getElementById('cat-nombre').value; if(nombre) { await addDoc(collection(db, "categorias"), { nombre }); cargarDatos(); } };
-        window.agregarSub = async (cat) => { const sub = prompt("Nombre:"); if(sub) { await addDoc(collection(db, "servicios"), { categoria: cat, nombre: sub }); cargarDatos(); } };
-        window.eliminarCategoria = async (id) => { await deleteDoc(doc(db, "categorias", id)); cargarDatos(); };
-        window.eliminar = async (id) => { await deleteDoc(doc(db, "servicios", id)); cargarDatos(); };
-
         document.getElementById('btn-entrar').addEventListener('click', async () => {
-            try {
-                await signInWithEmailAndPassword(auth, document.getElementById('user').value, document.getElementById('pass').value);
-                document.getElementById('login-box').style.display = 'none';
-                document.getElementById('admin-panel').style.display = 'block';
-                cargarDatos();
-            } catch (e) { alert("Error: " + e.message); }
+            await signInWithEmailAndPassword(getAuth(), document.getElementById('user').value, document.getElementById('pass').value);
+            document.getElementById('login-box').style.display = 'none';
+            document.getElementById('admin-panel').style.display = 'block';
+            cargarDatos();
         });
     </script>
 </body>
