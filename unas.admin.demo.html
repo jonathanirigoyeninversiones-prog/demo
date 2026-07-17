@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <title>Panel Administrativo Pro</title>
+    <title>ccc Panel Administrativo Pro</title>
     <style>
         body { font-family: sans-serif; padding: 20px; }
         .tab { display: none; padding: 20px; border: 1px solid #ddd; }
@@ -44,7 +44,7 @@
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/12.16.0/firebase-app.js";
         import { getAuth, signInWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/12.16.0/firebase-auth.js";
-        import { getFirestore, collection, getDocs, addDoc, deleteDoc, doc } from "https://www.gstatic.com/firebasejs/12.16.0/firebase-firestore.js";
+        import { getFirestore, collection, getDocs, addDoc, deleteDoc, doc, updateDoc } from "https://www.gstatic.com/firebasejs/12.16.0/firebase-firestore.js";
 
         const firebaseConfig = {
             apiKey: "AIzaSyDCN2ah_fSjW385KgAb48W8Cd9PhFDOQJ0",
@@ -68,6 +68,11 @@
             if(nombre) { await addDoc(collection(db, "categorias"), { nombre }); cargarDatos(); }
         };
 
+        window.modificarCategoria = async (id, nombreActual) => {
+            const nuevoNombre = prompt("Nuevo nombre para la categoría:", nombreActual);
+            if(nuevoNombre) { await updateDoc(doc(db, "categorias", id), { nombre: nuevoNombre }); cargarDatos(); }
+        };
+
         window.agregarSub = async (catNombre) => {
             const subNombre = prompt("Nombre del sub-servicio para " + catNombre + ":");
             if(subNombre) { await addDoc(collection(db, "servicios"), { categoria: catNombre, nombre: subNombre }); cargarDatos(); }
@@ -88,6 +93,7 @@
                 div.innerHTML += `<div class="cat-box">
                     <strong>Categoría: ${cat}</strong>
                     <button onclick="agregarSub('${cat}')">Agregar Sub-servicio</button>
+                    <button onclick="modificarCategoria('${catDoc.id}', '${cat}')">Modificar Categoría</button>
                     <button onclick="eliminarCategoria('${catDoc.id}')" style="background:red; color:white;">Borrar Categoría</button>
                     <div id="sub-${catDoc.id}"></div>
                 </div>`;
