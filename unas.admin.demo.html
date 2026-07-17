@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <title>111 Panel Administrativo</title>
+    <title>1111 Panel Administrativo</title>
     <style>
         body { font-family: sans-serif; padding: 20px; }
         #login-box { display: flex; flex-direction: column; align-items: center; justify-content: center; height: 80vh; }
@@ -67,7 +67,6 @@
             tbody.innerHTML = "";
             divCat.innerHTML = "";
             
-            // Cargar citas
             (await getDocs(collection(db, "citas"))).forEach(d => {
                 const c = d.data();
                 const clase = c.confirmado ? 'class="confirmado"' : '';
@@ -79,14 +78,11 @@
                 </td></tr>`;
             });
 
-            // Cargar categorías
             (await getDocs(collection(db, "categorias"))).forEach((catDoc) => {
                 divCat.innerHTML += `<div class="cat-box"><strong>${catDoc.data().nombre}</strong></div>`;
             });
         };
         
-        setInterval(cargarDatos, 30000);
-
         document.getElementById('btn-entrar').addEventListener('click', async () => {
             try {
                 await signInWithEmailAndPassword(getAuth(), document.getElementById('user').value, document.getElementById('pass').value);
