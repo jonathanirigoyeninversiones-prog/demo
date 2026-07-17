@@ -47,22 +47,8 @@
             document.getElementById(id).classList.add('active');
         };
 
-        window.confirmarCita = async (id) => {
-            await updateDoc(doc(db, "citas", id), { confirmado: true });
-            cargarDatos();
-        };
-
-        window.gestionarCita = async (id, destino) => {
-            const snap = await getDocs(collection(db, "citas"));
-            const docRef = snap.docs.find(d => d.id === id);
-            if(docRef) {
-                await addDoc(collection(db, destino), docRef.data());
-                await deleteDoc(doc(db, "citas", id));
-            }
-            cargarDatos();
-        };
-
-        window.eliminarSub = async (id) => { await deleteDoc(doc(db, "subcategorias", id)); cargarDatos(); };
+        window.confirmarCita = async (id) => { await updateDoc(doc(db, "citas", id), { confirmado: true }); cargarDatos(); };
+        window.eliminarServicio = async (id) => { await deleteDoc(doc(db, "servicios", id)); cargarDatos(); };
 
         window.cargarDatos = async () => {
             const tbody = document.getElementById('lista-citas');
@@ -72,28 +58,21 @@
             
             (await getDocs(collection(db, "citas"))).forEach(d => {
                 const c = d.data();
-                const clase = c.confirmado ? 'class="confirmado"' : '';
-                tbody.innerHTML += `<tr ${clase}><td>${c.fecha}</td><td>${c.nombre} ${c.apellido}</td><td>${c.telefono}</td><td>${c.direccion || 'N/A'}</td><td>${c.subcategoria}</td>
-                <td>
-                    <button onclick="confirmarCita('${d.id}')">Confirmar</button>
-                    <button onclick="gestionarCita('${d.id}', 'listo')">Listo</button>
-                    <button onclick="gestionarCita('${d.id}', 'cancelar')">Cancelar</button>
-                </td></tr>`;
+                tbody.innerHTML += `<tr><td>${c.fecha}</td><td>${c.nombre}</td><td>${c.telefono}</td><td>${c.direccion || 'N/A'}</td><td>${c.subcategoria}</td>
+                <td><button onclick="confirmarCita('${d.id}')">Confirmar</button></td></tr>`;
             });
 
             const cats = await getDocs(collection(db, "categorias"));
-            const subs = await getDocs(collection(db, "subcategorias"));
+            const servs = await getDocs(collection(db, "servicios"));
             
             cats.forEach(catDoc => {
-                console.log("Categoría ID:", catDoc.id, "Nombre:", catDoc.data().nombre);
-                let html = `<div class="cat-box"><strong>${catDoc.data().nombre}</strong>`;
-                subs.forEach(sub => {
-                    const subData = sub.data();
-                    console.log("Comparando:", subData.categoriaId, "con", catDoc.id);
-                    if (subData.categoriaId === catDoc.id || subData.categoriaId === catDoc.data().nombre) {
-                        html += `<div class="sub-item"><span>${subData.nombre}</span> 
-                        <div><button onclick="alert('Funcionalidad Modificar')">Modificar</button>
-                        <button onclick="eliminarSub('${sub.id}')">Eliminar</button></div></div>`;
+                let catNombre = catDoc.data().nombre;
+                let html = `<div class="cat-box"><strong>${catNombre}</strong>`;
+                servs.forEach(s => {
+                    if (s.data().categoria === catNombre) {
+                        html += `<div class="sub-item"><span>${s.data().nombre}</span> 
+                        <div><button onclick="alert('Modificar ${s.id}')">Modificar</button>
+                        <button onclick="eliminarServicio('${s.id}')">Eliminar</button></div></div>`;
                     }
                 });
                 divCat.innerHTML += html + `</div>`;
@@ -103,8 +82,8 @@
         document.getElementById('btn-entrar').addEventListener('click', async () => {
             try {
                 await signInWithEmailAndPassword(getAuth(), document.getElementById('user').value, document.getElementById('pass').value);
-                document.getElementById('login-box').style.display = 'none';
                 document.getElementById('admin-panel').style.display = 'block';
+                document.getElementById('login-box').style.display = 'none';
                 cargarDatos();
             } catch (e) { alert("Error: " + e.message); }
         });
