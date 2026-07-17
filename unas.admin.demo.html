@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <title>mmm Panel Administrativo</title>
+    <title>Panel Administrativo</title>
     <style>
         body { font-family: sans-serif; padding: 20px; }
         #login-box { display: flex; flex-direction: column; align-items: center; justify-content: center; height: 80vh; }
@@ -85,10 +85,13 @@
             const subs = await getDocs(collection(db, "subcategorias"));
             
             cats.forEach(catDoc => {
+                console.log("Categoría ID:", catDoc.id, "Nombre:", catDoc.data().nombre);
                 let html = `<div class="cat-box"><strong>${catDoc.data().nombre}</strong>`;
                 subs.forEach(sub => {
-                    if (sub.data().categoriaId === catDoc.id || sub.data().categoriaId === catDoc.data().nombre) {
-                        html += `<div class="sub-item"><span>${sub.data().nombre}</span> 
+                    const subData = sub.data();
+                    console.log("Comparando:", subData.categoriaId, "con", catDoc.id);
+                    if (subData.categoriaId === catDoc.id || subData.categoriaId === catDoc.data().nombre) {
+                        html += `<div class="sub-item"><span>${subData.nombre}</span> 
                         <div><button onclick="alert('Funcionalidad Modificar')">Modificar</button>
                         <button onclick="eliminarSub('${sub.id}')">Eliminar</button></div></div>`;
                     }
@@ -108,4 +111,3 @@
     </script>
 </body>
 </html>
-```[cite: 2]
