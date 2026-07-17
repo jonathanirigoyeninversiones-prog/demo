@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <title>111 Panel Administrativo Pro</title>
+    <title>222 Panel Administrativo Pro</title>
     <style>
         body { font-family: sans-serif; padding: 20px; }
         .tab { display: none; padding: 20px; border: 1px solid #ddd; }
@@ -48,7 +48,12 @@
             <h1>Gestión de Horario</h1>
             <input type="time" id="hora-cierre-input">
             <button onclick="guardarHoraCierre()">Guardar Hora Cierre</button>
-            <div id="lista-dias" style="margin-top: 20px;"></div>
+            <h1>Gestión de Días Laborales</h1>
+            <div id="lista-dias" style="margin-bottom: 30px;"></div>
+            <h1>Gestión de Estructura</h1>
+            <input type="text" id="cat-nombre" placeholder="Nombre categoría">
+            <button onclick="agregarCategoria()">Crear Categoría</button>
+            <div id="lista-categorias" style="margin-top:20px;"></div>
         </div>
     </div>
 
@@ -74,6 +79,7 @@
         };
 
         window.cargarDatos = async () => {
+            // Cargar Citas
             const citasSnap = await getDocs(collection(db, "citas"));
             const tbody = document.getElementById('lista-citas');
             tbody.innerHTML = "";
@@ -90,6 +96,36 @@
                     </td>
                 </tr>`;
             });
+
+            // Cargar Horario, Días y Estructura
+            const confSnap = await getDoc(doc(db, "config", "horario"));
+            if (confSnap.exists()) document.getElementById('hora-cierre-input').value = confSnap.data().cierre;
+
+            const diasSemana = ["lunes", "martes", "miercoles", "jueves", "viernes", "sabado", "domingo"];
+            const divDias = document.getElementById('lista-dias');
+            divDias.innerHTML = "";
+            for (const dia of diasSemana) {
+                const snap = await getDoc(doc(db, "dias_activos", dia));
+                const activo = snap.exists() ? snap.data().activo : false;
+                divDias.innerHTML += `<div class="dia-box" style="background:${activo ? '#d4af37' : '#eee'}">
+                    ${dia.toUpperCase()}<br><button onclick="toggleDia('${dia}', ${activo})">${activo ? 'Cerrar' : 'Abrir'}</button>
+                </div>`;
+            }
+
+            const catSnap = await getDocs(collection(db, "categorias"));
+            const servSnap = await getDocs(collection(db, "servicios"));
+            const divCat = document.getElementById('lista-categorias');
+            divCat.innerHTML = "";
+            catSnap.forEach(catDoc => {
+                const cat = catDoc.data().nombre;
+                divCat.innerHTML += `<div class="cat-box"><strong>Categoría: ${cat}</strong>
+                    <button onclick="agregarSub('${cat}')">Sub-servicio</button>
+                    <button onclick="eliminarCategoria('${catDoc.id}')" style="background:red; color:white;">Borrar</button>
+                    <div id="sub-${catDoc.id}"></div></div>`;
+                servSnap.forEach(sDoc => {
+                    if(sDoc.data().categoria === cat) document.getElementById(`sub-${catDoc.id}`).innerHTML += `<div class="sub-box">- ${sDoc.data().nombre} <button onclick="eliminar('${sDoc.id}')">Eliminar</button></div>`;
+                });
+            });
         };
 
         setInterval(cargarDatos, 30000);
@@ -98,10 +134,9 @@
             const docRef = doc(db, "citas", id);
             const docSnap = await getDoc(docRef);
             const data = docSnap.data();
-
             if (accion === 'confirmar') {
                 await setDoc(docRef, { ...data, confirmado: true });
-                document.getElementById(`row-${id}`).classList.add('confirmado');
+                cargarDatos();
             } else if (accion === 'listo') {
                 await addDoc(collection(db, "listo"), data);
                 await deleteDoc(docRef);
@@ -113,11 +148,12 @@
             }
         };
 
-        window.guardarHoraCierre = async () => {
-            const hora = document.getElementById('hora-cierre-input').value;
-            await setDoc(doc(db, "config", "horario"), { cierre: hora });
-            alert("Hora guardada.");
-        };
+        window.toggleDia = async (dia, activo) => { await setDoc(doc(db, "dias_activos", dia), { activo: !activo }); cargarDatos(); };
+        window.guardarHoraCierre = async () => { const hora = document.getElementById('hora-cierre-input').value; await setDoc(doc(db, "config", "horario"), { cierre: hora }); alert("Hora guardada."); };
+        window.agregarCategoria = async () => { const nombre = document.getElementById('cat-nombre').value; if(nombre) { await addDoc(collection(db, "categorias"), { nombre }); cargarDatos(); } };
+        window.agregarSub = async (cat) => { const sub = prompt("Nombre:"); if(sub) { await addDoc(collection(db, "servicios"), { categoria: cat, nombre: sub }); cargarDatos(); } };
+        window.eliminarCategoria = async (id) => { await deleteDoc(doc(db, "categorias", id)); cargarDatos(); };
+        window.eliminar = async (id) => { await deleteDoc(doc(db, "servicios", id)); cargarDatos(); };
 
         document.getElementById('btn-entrar').addEventListener('click', async () => {
             try {
