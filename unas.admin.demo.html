@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <title>111 Panel Administrativo</title>
+    <title>Panel Administrativo</title>
     <style>
         body { font-family: sans-serif; padding: 20px; }
         #login-box { display: flex; flex-direction: column; align-items: center; justify-content: center; height: 80vh; }
@@ -63,6 +63,12 @@
             cargarDatos();
         };
 
+        window.eliminarServicio = async (id) => { await deleteDoc(doc(db, "servicios", id)); cargarDatos(); };
+        window.modificarServicio = async (id) => {
+            const nuevo = prompt("Nuevo nombre:");
+            if(nuevo) { await updateDoc(doc(db, "servicios", id), { nombre: nuevo }); cargarDatos(); }
+        };
+
         window.cargarDatos = async () => {
             const tbody = document.getElementById('lista-citas');
             const divCat = document.getElementById('lista-categorias');
@@ -71,18 +77,22 @@
             (await getDocs(collection(db, "citas"))).forEach(d => {
                 const c = d.data();
                 tbody.innerHTML += `<tr class="${c.confirmado ? 'confirmado' : ''}"><td>${c.fecha}</td><td>${c.nombre}</td><td>${c.telefono}</td><td>${c.subcategoria}</td>
-                <td>
-                    <button onclick="confirmarCita('${d.id}')">Confirmar</button>
-                    <button onclick="gestionarCita('${d.id}', 'listo')">Listo</button>
-                    <button onclick="gestionarCita('${d.id}', 'cancelar')">Cancelar</button>
-                </td></tr>`;
+                <td><button onclick="confirmarCita('${d.id}')">Confirmar</button>
+                <button onclick="gestionarCita('${d.id}', 'listo')">Listo</button>
+                <button onclick="gestionarCita('${d.id}', 'cancelar')">Cancelar</button></td></tr>`;
             });
 
             const cats = await getDocs(collection(db, "categorias"));
             const servs = await getDocs(collection(db, "servicios"));
             cats.forEach(cat => {
                 let html = `<div class="cat-box"><strong>${cat.data().nombre}</strong>`;
-                servs.forEach(s => { if (s.data().categoria === cat.data().nombre) html += `<div class="sub-item"><span>${s.data().nombre}</span></div>`; });
+                servs.forEach(s => { 
+                    if (s.data().categoria === cat.data().nombre) {
+                        html += `<div class="sub-item"><span>${s.data().nombre}</span>
+                        <div><button onclick="modificarServicio('${s.id}')">Editar</button>
+                        <button onclick="eliminarServicio('${s.id}')">Eliminar</button></div></div>`;
+                    }
+                });
                 divCat.innerHTML += html + `</div>`;
             });
         };
