@@ -2,14 +2,13 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <title>zzz Panel Administrativo Pro</title>
+    <title>zzz Panel Administrativo</title>
     <style>
         body { font-family: sans-serif; padding: 20px; }
         .tab { display: none; padding: 20px; border: 1px solid #ddd; }
         .active { display: block; }
         table { width: 100%; border-collapse: collapse; margin-top: 10px; }
         th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
-        .confirmado { background-color: #d4edda !important; }
     </style>
 </head>
 <body>
@@ -24,6 +23,9 @@
             <table><thead><tr><th>Fecha</th><th>Nombre</th><th>Tel</th><th>Dir</th><th>Servicio</th><th>Acciones</th></tr></thead><tbody id="lista-citas"></tbody></table>
         </div>
         <div id="tab-modificar" class="tab">
+            <h1>Configuración de WhatsApp</h1>
+            <input type="tel" id="admin-ws-input" placeholder="Tu número WhatsApp (con código país)">
+            <button onclick="guardarAdminWS()">Guardar Número</button>
             <h1>Gestión de Estructura</h1>
             <div id="lista-categorias"></div>
         </div>
@@ -31,21 +33,37 @@
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/12.16.0/firebase-app.js";
         import { getAuth, signInWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/12.16.0/firebase-auth.js";
-        import { getFirestore, collection, getDocs, doc, setDoc, deleteDoc, updateDoc, addDoc } from "https://www.gstatic.com/firebasejs/12.16.0/firebase-firestore.js";
+        import { getFirestore, collection, getDocs, doc, setDoc, deleteDoc, getDoc, addDoc } from "https://www.gstatic.com/firebasejs/12.16.0/firebase-firestore.js";
+        
         const db = getFirestore(initializeApp({apiKey: "AIzaSyDCN2ah_fSjW385KgAb48W8Cd9PhFDOQJ0", authDomain: "estilista-demo.firebaseapp.com", projectId: "estilista-demo", storageBucket: "estilista-demo.firebasestorage.app", messagingSenderId: "652196958867", appId: "1:652196958867:web:1c860102aa769ea6787366"}));
         
+        window.mostrarTab = (id) => {
+            document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+            document.getElementById(id).classList.add('active');
+        };
+
+        window.guardarAdminWS = async () => {
+            const num = document.getElementById('admin-ws-input').value;
+            await setDoc(doc(db, "config", "whatsapp_admin"), { numero: num });
+            alert("Número guardado exitosamente.");
+        };
+
         window.cargarDatos = async () => {
             const tbody = document.getElementById('lista-citas');
             tbody.innerHTML = "";
+            const wsSnap = await getDoc(doc(db, "config", "whatsapp_admin"));
+            const adminNum = wsSnap.exists() ? wsSnap.data().numero : "";
+            
             (await getDocs(collection(db, "citas"))).forEach(d => {
                 const c = d.data();
                 tbody.innerHTML += `<tr><td>${c.fecha}</td><td>${c.nombre} ${c.apellido}</td><td>${c.telefono}</td><td>${c.direccion || 'N/A'}</td><td>${c.subcategoria}</td>
                 <td>
-                    <button onclick="window.location.href='https://wa.me/${c.telefono}?text=Hola, confirmamos su cita para el ${c.fecha}'">WhatsApp</button>
+                    <button onclick="window.open('https://wa.me/${adminNum}?text=Hola, tengo una reserva para el ${c.fecha}')">Contactar vía Admin WS</button>
                     <button onclick="gestionar('${d.id}', 'listo')">Listo</button>
                 </td></tr>`;
             });
         };
+        
         window.gestionar = async (id, col) => {
             const snap = await getDocs(collection(db, "citas"));
             const data = snap.docs.find(d => d.id === id).data();
@@ -53,6 +71,7 @@
             await deleteDoc(doc(db, "citas", id));
             cargarDatos();
         };
+
         document.getElementById('btn-entrar').addEventListener('click', async () => {
             await signInWithEmailAndPassword(getAuth(), document.getElementById('user').value, document.getElementById('pass').value);
             document.getElementById('login-box').style.display = 'none';
