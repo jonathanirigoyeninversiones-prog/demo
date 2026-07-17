@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <title>111 Panel Administrativo</title>
+    <title>Panel Administrativo</title>
     <style>
         body { font-family: sans-serif; padding: 20px; }
         #login-box { display: flex; flex-direction: column; align-items: center; justify-content: center; height: 80vh; }
@@ -11,7 +11,8 @@
         .active { display: block; }
         table { width: 100%; border-collapse: collapse; margin-top: 10px; }
         th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
-        .cat-box { border: 1px solid #333; padding: 10px; margin-top: 10px; }
+        .cat-box { border: 1px solid #333; padding: 10px; margin-top: 10px; border-radius: 5px; }
+        .sub-box { margin-left: 20px; padding: 5px; border-bottom: 1px solid #eee; }
     </style>
 </head>
 <body>
@@ -39,7 +40,7 @@
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/12.16.0/firebase-app.js";
         import { getAuth, signInWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/12.16.0/firebase-auth.js";
-        import { getFirestore, collection, getDocs, doc, setDoc, deleteDoc, getDoc, addDoc } from "https://www.gstatic.com/firebasejs/12.16.0/firebase-firestore.js";
+        import { getFirestore, collection, getDocs, doc, setDoc, deleteDoc, getDoc, addDoc, updateDoc } from "https://www.gstatic.com/firebasejs/12.16.0/firebase-firestore.js";
         
         const db = getFirestore(initializeApp({apiKey: "AIzaSyDCN2ah_fSjW385KgAb48W8Cd9PhFDOQJ0", authDomain: "estilista-demo.firebaseapp.com", projectId: "estilista-demo", storageBucket: "estilista-demo.firebasestorage.app", messagingSenderId: "652196958867", appId: "1:652196958867:web:1c860102aa769ea6787366"}));
         
@@ -54,6 +55,11 @@
             alert("Número guardado.");
         };
 
+        window.editarElemento = async (col, id, actual) => {
+            const nuevo = prompt("Nuevo nombre:", actual);
+            if (nuevo) { await updateDoc(doc(db, col, id), { nombre: nuevo }); cargarDatos(); }
+        };
+
         window.cargarDatos = async () => {
             const tbody = document.getElementById('lista-citas');
             const divCat = document.getElementById('lista-categorias');
@@ -61,6 +67,7 @@
             divCat.innerHTML = "";
             
             const wsSnap = await getDoc(doc(db, "config", "whatsapp_admin"));
+            if(wsSnap.exists()) document.getElementById('admin-ws-input').value = wsSnap.data().numero;
             const adminNum = wsSnap.exists() ? wsSnap.data().numero : "";
             
             (await getDocs(collection(db, "citas"))).forEach(d => {
@@ -69,8 +76,17 @@
                 <td><button onclick="window.open('https://wa.me/${adminNum}?text=Hola, confirmamos su cita')">WhatsApp</button> <button onclick="gestionar('${d.id}', 'listo')">Listo</button></td></tr>`;
             });
 
-            (await getDocs(collection(db, "categorias"))).forEach(async (catDoc) => {
-                divCat.innerHTML += `<div class="cat-box"><strong>${catDoc.data().nombre}</strong></div>`;
+            const cats = await getDocs(collection(db, "categorias"));
+            const servs = await getDocs(collection(db, "servicios"));
+            cats.forEach((catDoc) => {
+                const catData = catDoc.data();
+                let html = `<div class="cat-box"><strong>${catData.nombre}</strong> 
+                            <button onclick="editarElemento('categorias', '${catDoc.id}', '${catData.nombre}')">Editar</button>`;
+                servs.forEach(sDoc => {
+                    if(sDoc.data().categoria === catData.nombre) 
+                        html += `<div class="sub-box">- ${sDoc.data().nombre} <button onclick="editarElemento('servicios', '${sDoc.id}', '${sDoc.data().nombre}')">Editar</button></div>`;
+                });
+                divCat.innerHTML += html + `</div>`;
             });
         };
         
@@ -90,7 +106,7 @@
                 document.getElementById('login-box').style.display = 'none';
                 document.getElementById('admin-panel').style.display = 'block';
                 cargarDatos();
-            } catch (e) { alert("Error de acceso: " + e.message); }
+            } catch (e) { alert("Error: " + e.message); }
         });
     </script>
 </body>
