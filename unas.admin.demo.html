@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <title>Panel Administrativo</title>
+    <title>ccc Panel Administrativo</title>
     <style>
         body { font-family: sans-serif; padding: 20px; }
         #login-box { display: flex; flex-direction: column; align-items: center; justify-content: center; height: 80vh; }
@@ -63,10 +63,10 @@
 
         window.eliminarServicio = async (id) => { await deleteDoc(doc(db, "servicios", id)); cargarDatos(); };
         window.modificarServicio = async (id) => { const n = prompt("Nuevo nombre:"); if(n) { await updateDoc(doc(db, "servicios", id), { nombre: n }); cargarDatos(); } };
+        window.agregarServicio = async (catNombre) => { const n = prompt("Nombre del nuevo servicio:"); if(n) { await addDoc(collection(db, "servicios"), { nombre: n, categoria: catNombre }); cargarDatos(); } };
         
         window.agregarCategoria = async () => { const n = prompt("Nombre de la nueva categoría:"); if(n) { await addDoc(collection(db, "categorias"), { nombre: n }); cargarDatos(); } };
         window.eliminarCategoria = async (id) => { await deleteDoc(doc(db, "categorias", id)); cargarDatos(); };
-        
         window.modificarCategoria = async (id, nombreAntiguo) => {
             const nuevo = prompt("Nuevo nombre para la categoría:", nombreAntiguo);
             if(nuevo && nuevo !== nombreAntiguo) {
@@ -96,8 +96,11 @@
             cats.forEach(cat => {
                 let catNombre = cat.data().nombre;
                 let html = `<div class="cat-box"><div class="cat-header"><strong>${catNombre}</strong>
-                <div><button onclick="modificarCategoria('${cat.id}', '${catNombre}')">Editar Cat</button>
-                <button onclick="eliminarCategoria('${cat.id}')">Eliminar Cat</button></div></div>`;
+                <div>
+                    <button onclick="agregarServicio('${catNombre}')">+ Agregar Servicio</button>
+                    <button onclick="modificarCategoria('${cat.id}', '${catNombre}')">Editar Cat</button>
+                    <button onclick="eliminarCategoria('${cat.id}')">Eliminar Cat</button>
+                </div></div>`;
                 servs.forEach(s => { 
                     if (s.data().categoria === catNombre) {
                         html += `<div class="sub-item"><span>${s.data().nombre}</span>
