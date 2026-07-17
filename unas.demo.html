@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <title>Reserva de Citas - Salon Beauty</title>
+    <title>qqq Reserva de Citas - Salon Beauty</title>
     <style>
         body { background-image: url('fondo-unas.png'); background-size: cover; background-position: center; min-height: 100vh; margin: 0; font-family: sans-serif; }
         .container { background: rgba(255, 255, 255, 0.95); padding: 30px; border-radius: 15px; max-width: 600px; margin: 40px auto; }
@@ -85,7 +85,7 @@
             await addDoc(collection(db, "citas"), datos);
             const snapWpp = await getDoc(doc(db, "configuracion", "whatsapp"));
             const numWpp = snapWpp.exists() ? snapWpp.data().numero : "";
-            const mensaje = `Nueva cita: ${datos.nombre} ${datos.apellido}, Fecha: ${datos.fecha}, Servicio: ${datos.subcategoria}`;
+            const mensaje = `Solicitud de cita: ${datos.nombre} ${datos.apellido}, Fecha: ${datos.fecha}, Servicio: ${datos.subcategoria}, Dirección: ${datos.direccion}`;
             window.open(`https://wa.me/${numWpp}?text=${encodeURIComponent(mensaje)}`, '_blank');
             document.getElementById('modal-confirmacion').style.display = "flex";
         };
