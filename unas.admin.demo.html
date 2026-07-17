@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <title>xxx Panel Administrativo Pro</title>
+    <title>Panel Administrativo Pro</title>
     <style>
         body { font-family: sans-serif; padding: 20px; }
         .tab { display: none; padding: 20px; border: 1px solid #ddd; }
@@ -88,8 +88,13 @@
 
         window.guardarHoraCierre = async () => {
             const hora = document.getElementById('hora-cierre-input').value;
-            await setDoc(doc(db, "config", "horario"), { cierre: hora });
-            alert("Hora de cierre guardada: " + hora);
+            if (hora) {
+                // Guarda la hora en formato militar (HH:MM) en la colección config, documento horario[cite: 3]
+                await setDoc(doc(db, "config", "horario"), { cierre: hora });
+                alert("Hora de cierre guardada: " + hora);
+            } else {
+                alert("Por favor seleccione una hora válida.");
+            }
         };
 
         window.toggleDia = async (dia, estadoActual) => {
