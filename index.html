@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Portal de Demos - Jonathan Irigoyen Inversiones</title>
+    <title>ccc Portal de Demos - Jonathan Irigoyen Inversiones</title>
     <style>
         /* --- VARIABLES DE COLOR --- */
         :root {
@@ -226,7 +226,7 @@
 
     </style>
 </head>
-<body class="dark-mode"> <!-- CLASE 'dark-mode' AÑADIDA AQUÍ -->
+<body class="dark-mode">
 
     <!-- HEADER -->
     <header>
@@ -251,7 +251,6 @@
             <article class="demo-card">
                 <h3>Peluquería - Uñas</h3>
                 <p>Demostración interactiva para servicios de manicura y estética.</p>
-                <!-- ENLACE CON APERTURA EN NUEVA PESTAÑA -->
                 <a href="https://jonathanirigoyeninversiones-prog.github.io/demo/unas.demo.html" 
                    target="_blank" 
                    rel="noopener noreferrer" 
@@ -260,14 +259,17 @@
                 </a>
             </article>
 
-            <!-- Puedes añadir más tarjetas aquí en el futuro -->
-            <!--
+            <!-- TARJETA: UÑAS DEMO ADMIN -->
             <article class="demo-card">
-                <h3>Restaurante</h3>
-                <p>Demo de gestión de pedidos y menú digital.</p>
-                <a href="#" target="_blank" class="cta-button">RESTAURANTE DEMO</a>
+                <h3>Peluquería - Panel Admin</h3>
+                <p>Panel de gestión y administración para servicios de estética.</p>
+                <a href="https://jonathanirigoyeninversiones-prog.github.io/demo/unas.admin.demo.html" 
+                   target="_blank" 
+                   rel="noopener noreferrer" 
+                   class="cta-button">
+                    UÑAS DEMO ADMIN
+                </a>
             </article>
-            -->
 
         </div>
     </main>
@@ -282,12 +284,10 @@
         const body = document.body;
         const themeToggle = document.getElementById('themeToggle');
 
-        // Función para cambiar el tema
         function toggleTheme() {
             body.classList.toggle('dark-mode');
         }
 
-        // Evento click para el botón
         themeToggle.addEventListener('click', toggleTheme);
     </script>
 
