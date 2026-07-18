@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <title>ccccc     Administrativo</title>
+    <title>Panel Administrativo</title>
     <style>
         body { font-family: sans-serif; padding: 20px; }
         #login-box { display: flex; flex-direction: column; align-items: center; justify-content: center; height: 80vh; }
@@ -102,7 +102,7 @@
             const cats = await getDocs(collection(db, "categorias")), servs = await getDocs(collection(db, "servicios"));
             cats.forEach(cat => { let catNombre = cat.data().nombre, html = `<div class="cat-box"><div class="cat-header"><strong>${catNombre}</strong><div><button onclick="agregarServicio('${catNombre}')">+ Agregar Servicio</button><button onclick="modificarCategoria('${cat.id}', '${catNombre}')">Editar</button><button onclick="eliminarCategoria('${cat.id}')">Eliminar</button></div></div>`; servs.forEach(s => { if (s.data().categoria === catNombre) { html += `<div class="sub-item"><span>${s.data().nombre}</span><div><button onclick="modificarServicio('${s.id}')">Editar</button><button onclick="eliminarServicio('${s.id}')">Eliminar</button></div></div>`; } }); divCat.innerHTML += html + `</div>`; });
         };
-        document.getElementById('btn-entrar').addEventListener('click', async () => { try { await signInWithEmailAndPassword(getAuth(), document.getElementById('user').value, document.getElementById('pass').value); document.getElementById('login-box').style.display = 'none'; document.getElementById('admin-panel').style.display = 'block'; cargarDatos(); } catch (e) { alert("Error"); } });
+        document.getElementById('btn-entrar').addEventListener('click', async () => { try { await signInWithEmailAndPassword(getAuth(), document.getElementById('user').value, document.getElementById('pass').value); document.getElementById('login-box').style.display = 'none'; document.getElementById('admin-panel').style.display = 'block'; cargarDatos(); setInterval(cargarDatos, 30000); } catch (e) { alert("Error"); } });
     </script>
 </body>
 </html>
