@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <title>Panel Administrativo</title>
+    <title>mmmm Panel Administrativo</title>
     <style>
         body { font-family: sans-serif; padding: 20px; }
         #login-box { display: flex; flex-direction: column; align-items: center; justify-content: center; height: 80vh; }
@@ -55,7 +55,15 @@
         import { initializeApp } from "https://www.gstatic.com/firebasejs/12.16.0/firebase-app.js";
         import { getAuth, signInWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/12.16.0/firebase-auth.js";
         import { getFirestore, collection, getDocs, doc, deleteDoc, addDoc, updateDoc, setDoc, getDoc } from "https://www.gstatic.com/firebasejs/12.16.0/firebase-firestore.js";
-        const db = getFirestore(initializeApp({apiKey: "AIzaSyDCN2ah_fSjW385KgAb48W8Cd9PhFDOQJ0", authDomain: "estilista-demo.firebaseapp.com", projectId: "estilista-demo", storageBucket: "estilista-demo.firebasestorage.app", messagingSenderId: "652196958867", appId: "1:652196958867:web:1c860102aa769ea6787366"}));
+        import { initializeAppCheck, ReCaptchaV3Provider } from "https://www.gstatic.com/firebasejs/12.16.0/firebase-app-check.js";
+        
+        const app = initializeApp({apiKey: "AIzaSyDCN2ah_fSjW385KgAb48W8Cd9PhFDOQJ0", authDomain: "estilista-demo.firebaseapp.com", projectId: "estilista-demo", storageBucket: "estilista-demo.firebasestorage.app", messagingSenderId: "652196958867", appId: "1:652196958867:web:1c860102aa769ea6787366"});
+        const db = getFirestore(app);
+
+        initializeAppCheck(app, {
+            provider: new ReCaptchaV3Provider('6LdCelktAAAAAPFK_qUlAldO_foy9DlgZh0nliiV'),
+            isTokenAutoRefreshEnabled: true
+        });
         
         window.agregarCategoria = async () => { const nombre = prompt("Nombre de la categoría:"); if(nombre) await addDoc(collection(db, "categorias"), {nombre}); cargarDatos(); };
         window.agregarServicio = async (cat) => { const nombre = prompt("Nombre del servicio:"); if(nombre) await addDoc(collection(db, "servicios"), {nombre, categoria: cat}); cargarDatos(); };
@@ -112,7 +120,6 @@
             (await getDocs(collection(db, "citas"))).forEach(d => citasLocales.push({ id: d.id, data: d.data() }));
             (await getDocs(collection(db, "listo"))).forEach(d => citasCompletadas.push(d.data()));
             
-            // Orden automático al cargar datos
             ordenarCitas();
             
             const cats = await getDocs(collection(db, "categorias")), servs = await getDocs(collection(db, "servicios"));
