@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <title>111 Panel Administrativo</title>
+    <title>zzz Panel Administrativo</title>
     <style>
         body { font-family: sans-serif; padding: 20px; }
         #login-box { display: flex; flex-direction: column; align-items: center; justify-content: center; height: 80vh; }
@@ -11,20 +11,14 @@
         .active { display: block; }
         table { width: 100%; border-collapse: collapse; margin-top: 10px; }
         th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
-        
-        /* Filas alternas para tablas */
         table tr:nth-child(odd) { background-color: transparent; }
         table tr:nth-child(even) { background-color: #f2f2f2; }
-        
         .confirmado { background-color: #d4edda !important; }
         .cat-box { border: 1px solid #333; padding: 10px; margin-top: 10px; border-radius: 5px; }
         .cat-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
-        
-        /* Estilos de sub-items alternos sin romper la lógica */
         .sub-item { display: flex; justify-content: space-between; padding: 5px; border-bottom: 1px solid #eee; }
         .sub-item:nth-child(odd) { background-color: transparent; }
         .sub-item:nth-child(even) { background-color: #f2f2f2; }
-        
         .horario-box { border: 1px solid #ccc; padding: 15px; margin-top: 20px; }
     </style>
 </head>
@@ -35,50 +29,37 @@
         <input type="password" id="pass" placeholder="Contraseña">
         <button id="btn-entrar">Entrar</button>
     </div>
-
     <div id="admin-panel" style="display:none;">
         <button onclick="mostrarTab('tab-clientes')">Clientes</button>
         <button onclick="mostrarTab('tab-modificar')">Modificar</button>
-        
         <div id="tab-clientes" class="tab active">
             <button onclick="cargarDatos()">Refrescar</button>
             <button onclick="ordenarCitas()">Ordenar</button>
             <table><thead><tr><th>Fecha</th><th>Hora de solicitud</th><th>Nombre</th><th>Apellido</th><th>Tel</th><th>Dirección</th><th>Servicio</th><th>Acciones</th></tr></thead><tbody id="lista-citas"></tbody></table>
         </div>
-        
         <div id="tab-modificar" class="tab">
             <h1>Gestión de Estructura</h1>
             <div class="horario-box">
                 <h3>Configuración</h3>
-                <div>
-                    WhatsApp: <input type="text" id="input-wpp" placeholder="Ej: 584121234567">
-                    <button onclick="guardarConfig('whatsapp', 'input-wpp', 'numero')">Aceptar</button>
-                </div>
+                <div>WhatsApp: <input type="text" id="input-wpp" placeholder="Ej: 584121234567"> <button onclick="guardarConfig('whatsapp', 'input-wpp', 'numero')">Aceptar</button></div>
                 <h3>Horarios de Atención</h3>
-                <table id="tabla-horarios">
-                    <thead><tr><th>Día</th><th>Estado</th><th>Apertura</th><th>Cierre</th><th>Máx</th><th>Acción</th></tr></thead>
-                    <tbody id="lista-horarios"></tbody>
-                </table>
+                <table id="tabla-horarios"><thead><tr><th>Día</th><th>Estado</th><th>Apertura</th><th>Cierre</th><th>Máx</th><th>Acción</th></tr></thead><tbody id="lista-horarios"></tbody></table>
             </div>
             <button onclick="agregarCategoria()">+ Agregar Nueva Categoría</button>
             <div id="lista-categorias"></div>
         </div>
     </div>
-
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/12.16.0/firebase-app.js";
         import { getAuth, signInWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/12.16.0/firebase-auth.js";
         import { getFirestore, collection, getDocs, doc, deleteDoc, addDoc, updateDoc, setDoc, getDoc } from "https://www.gstatic.com/firebasejs/12.16.0/firebase-firestore.js";
-        
         const db = getFirestore(initializeApp({apiKey: "AIzaSyDCN2ah_fSjW385KgAb48W8Cd9PhFDOQJ0", authDomain: "estilista-demo.firebaseapp.com", projectId: "estilista-demo", storageBucket: "estilista-demo.firebasestorage.app", messagingSenderId: "652196958867", appId: "1:652196958867:web:1c860102aa769ea6787366"}));
-        
         window.agregarCategoria = async () => { const nombre = prompt("Nombre de la categoría:"); if(nombre) await addDoc(collection(db, "categorias"), {nombre}); cargarDatos(); };
         window.agregarServicio = async (cat) => { const nombre = prompt("Nombre del servicio:"); if(nombre) await addDoc(collection(db, "servicios"), {nombre, categoria: cat}); cargarDatos(); };
         window.modificarCategoria = async (id, nombre) => { const nuevo = prompt("Nuevo nombre:", nombre); if(nuevo) await updateDoc(doc(db, "categorias", id), {nombre: nuevo}); cargarDatos(); };
         window.eliminarCategoria = async (id) => { if(confirm("¿Eliminar?")) await deleteDoc(doc(db, "categorias", id)); cargarDatos(); };
         window.modificarServicio = async (id) => { const nuevo = prompt("Nuevo nombre:"); if(nuevo) await updateDoc(doc(db, "servicios", id), {nombre: nuevo}); cargarDatos(); };
         window.eliminarServicio = async (id) => { if(confirm("¿Eliminar?")) await deleteDoc(doc(db, "servicios", id)); cargarDatos(); };
-
         let citasLocales = [];
         window.mostrarTab = (id) => { document.querySelectorAll('.tab').forEach(t => t.classList.remove('active')); document.getElementById(id).classList.add('active'); };
         window.guardarConfig = async (docId, inputId, campo) => { const valor = document.getElementById(inputId).value; await setDoc(doc(db, "configuracion", docId), { [campo]: valor }, { merge: true }); alert("Guardado"); };
@@ -87,21 +68,18 @@
         window.confirmarCita = async (id) => { const snap = await getDoc(doc(db, "citas", id)); await updateDoc(doc(db, "citas", id), { confirmado: !snap.data().confirmado }); cargarDatos(); };
         window.gestionarCita = async (id, destino) => { const cita = citasLocales.find(c => c.id === id); if(cita) { await addDoc(collection(db, destino), cita.data); await deleteDoc(doc(db, "citas", id)); } cargarDatos(); };
         window.ordenarCitas = () => { citasLocales.sort((a, b) => { const fechaA = new Date(a.data.fecha); const fechaB = new Date(b.data.fecha); if (fechaA - fechaB !== 0) return fechaA - fechaB; return a.data.hora.localeCompare(b.data.hora); }); renderizarTabla(); };
-
         const renderizarTabla = () => { const tbody = document.getElementById('lista-citas'); tbody.innerHTML = ""; citasLocales.forEach(item => { const c = item.data; const isConfirmado = c.confirmado || false; let fechaFormateada = c.fecha || ''; if (fechaFormateada.includes('-')) { const partes = fechaFormateada.split('-'); if (partes.length === 3) fechaFormateada = `${partes[2]}-${partes[1]}-${partes[0]}`; } tbody.innerHTML += `<tr class="${isConfirmado ? 'confirmado' : ''}"><td>${fechaFormateada}</td><td>${c.hora || ''}</td><td>${c.nombre || ''}</td><td>${c.apellido || ''}</td><td>${c.telefono || ''}</td><td>${c.direccion || ''}</td><td>${c.subcategoria || ''}</td><td><button onclick="confirmarCita('${item.id}')">${isConfirmado ? 'Desconfirmar' : 'Confirmar'}</button><button onclick="gestionarCita('${item.id}', 'listo')">Listo</button><button onclick="gestionarCita('${item.id}', 'cancelar')">Cancelar</button></td></tr>`; }); };
-
         window.cargarDatos = async () => {
             citasLocales = [];
-            const tbody = document.getElementById('lista-citas'); const divCat = document.getElementById('lista-categorias'); const divHor = document.getElementById('lista-horarios');
+            const tbody = document.getElementById('lista-citas'), divCat = document.getElementById('lista-categorias'), divHor = document.getElementById('lista-horarios');
             tbody.innerHTML = ""; divCat.innerHTML = ""; divHor.innerHTML = "";
             const snapWpp = await getDoc(doc(db, "configuracion", "whatsapp")); if(snapWpp.exists()) document.getElementById('input-wpp').value = snapWpp.data().numero || "";
             const dias = ["Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado", "Domingo"];
             for(let d of dias) { const snap = await getDoc(doc(db, "configuracion", d)); const data = snap.exists() ? snap.data() : {abierto: false, apertura: "08:00", cierre: "18:00", limite: 0}; divHor.innerHTML += `<tr><td>${d}</td><td><button onclick="toggleDia('${d}')">${data.abierto ? 'Abierto' : 'Cerrado'}</button></td><td><input type="time" id="apertura-${d}" value="${data.apertura || '08:00'}"></td><td><input type="time" id="cierre-${d}" value="${data.cierre || '18:00'}"></td><td><input type="number" id="lim-${d}" value="${data.limite || 0}" style="width:50px"></td><td><button onclick="guardarHorario('${d}')">Aceptar</button></td></tr>`; }
             const querySnapshot = await getDocs(collection(db, "citas")); querySnapshot.forEach(d => { citasLocales.push({ id: d.id, data: d.data() }); }); renderizarTabla();
-            const cats = await getDocs(collection(db, "categorias")); const servs = await getDocs(collection(db, "servicios"));
-            cats.forEach(cat => { let catNombre = cat.data().nombre; let html = `<div class="cat-box"><div class="cat-header"><strong>${catNombre}</strong><div><button onclick="agregarServicio('${catNombre}')">+ Agregar Servicio</button><button onclick="modificarCategoria('${cat.id}', '${catNombre}')">Editar Cat</button><button onclick="eliminarCategoria('${cat.id}')">Eliminar Cat</button></div></div>`; servs.forEach(s => { if (s.data().categoria === catNombre) { html += `<div class="sub-item"><span>${s.data().nombre}</span><div><button onclick="modificarServicio('${s.id}')">Editar</button><button onclick="eliminarServicio('${s.id}')">Eliminar</button></div></div>`; } }); divCat.innerHTML += html + `</div>`; });
+            const cats = await getDocs(collection(db, "categorias")), servs = await getDocs(collection(db, "servicios"));
+            cats.forEach(cat => { let catNombre = cat.data().nombre, html = `<div class="cat-box"><div class="cat-header"><strong>${catNombre}</strong><div><button onclick="agregarServicio('${catNombre}')">+ Agregar Servicio</button><button onclick="modificarCategoria('${cat.id}', '${catNombre}')">Editar Cat</button><button onclick="eliminarCategoria('${cat.id}')">Eliminar Cat</button></div></div>`; servs.forEach(s => { if (s.data().categoria === catNombre) { html += `<div class="sub-item"><span>${s.data().nombre}</span><div><button onclick="modificarServicio('${s.id}')">Editar</button><button onclick="eliminarServicio('${s.id}')">Eliminar</button></div></div>`; } }); divCat.innerHTML += html + `</div>`; });
         };
-        
         document.getElementById('btn-entrar').addEventListener('click', async () => { try { await signInWithEmailAndPassword(getAuth(), document.getElementById('user').value, document.getElementById('pass').value); document.getElementById('login-box').style.display = 'none'; document.getElementById('admin-panel').style.display = 'block'; cargarDatos(); setInterval(cargarDatos, 30000); } catch (e) { alert("Error de acceso"); } });
     </script>
 </body>
