@@ -2,45 +2,59 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Reserva de Citas - Salon Beauty</title>
+    <title>1 Panel Administrativo</title>
     <style>
-        body { background-image: url('fondo-unas.png'); background-size: cover; background-position: center; min-height: 100vh; margin: 0; font-family: sans-serif; }
-        .container { background: rgba(255, 255, 255, 0.95); padding: 30px; border-radius: 15px; max-width: 600px; margin: 40px auto; }
-        /* Regla responsiva añadida */
-        @media (max-width: 600px) { .container { width: 90%; margin: 20px auto; padding: 20px; } }
-        .btn-cat, .btn-sub { padding: 10px; margin: 5px; cursor: pointer; border: 1px solid #d4af37; background: #fff; border-radius: 5px; }
-        .btn-cat:hover, .btn-sub:hover { background: #d4af37; color: #fff; }
-        input { width: 100%; padding: 10px; margin: 10px 0; border: 1px solid #ddd; border-radius: 5px; box-sizing: border-box; }
-        #modal-confirmacion { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); justify-content: center; align-items: center; }
-        .modal-contenido { background: white; padding: 30px; border-radius: 10px; text-align: center; }
+        body { font-family: sans-serif; padding: 20px; }
+        #login-box { display: flex; flex-direction: column; align-items: center; justify-content: center; height: 80vh; }
+        #login-box input { margin: 5px; padding: 10px; width: 250px; }
+        .tab { display: none; padding: 20px; border: 1px solid #ddd; }
+        .active { display: block; }
+        table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+        th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+        table tr:nth-child(odd) { background-color: transparent; }
+        table tr:nth-child(even) { background-color: #f2f2f2; }
+        .confirmado { background-color: #d4edda !important; }
+        .vip { background-color: #fff3cd !important; font-weight: bold; }
+        .svip { background-color: #f8d7da !important; font-weight: bold; }
+        .cat-box { border: 1px solid #333; padding: 10px; margin-top: 10px; border-radius: 5px; }
+        .cat-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
+        .sub-item { display: flex; justify-content: space-between; padding: 5px; border-bottom: 1px solid #eee; }
+        .horario-box { border: 1px solid #ccc; padding: 15px; margin-top: 20px; }
     </style>
 </head>
 <body>
-    <div class="container">
-        <h3>Reserva tu cita</h3>
-        <input type="date" id="fecha-cita" onchange="validarDia()">
-        <div id="msg-dia"></div>
-        <div id="categorias-container" style="display:none; margin-top: 20px;"></div>
-        <div id="subcategorias-container" style="display:none; margin-top: 20px;"></div>
-        <div id="formulario-reserva" style="display:none; margin-top: 20px;">
-            <input type="text" id="nombre" placeholder="Nombre">
-            <input type="text" id="apellido" placeholder="Apellido">
-            <input type="tel" id="telefono" placeholder="Teléfono">
-            <input type="text" id="direccion" placeholder="Dirección">
-            <button onclick="solicitarCita()">Solicitar Cita</button>
-        </div>
+    <div id="login-box">
+        <h3>Acceso Administrativo</h3>
+        <input type="email" id="user" placeholder="Correo">
+        <input type="password" id="pass" placeholder="Contraseña">
+        <button id="btn-entrar">Entrar</button>
     </div>
-    <div id="modal-confirmacion">
-        <div class="modal-contenido">
-            <h3>Gracias por preferirnos</h3>
-            <p>En poco te contactaremos para confirmar la cita</p>
-            <button onclick="location.reload()">Aceptar</button>
+    <div id="admin-panel" style="display:none;">
+        <button onclick="mostrarTab('tab-clientes')">Clientes</button>
+        <button onclick="mostrarTab('tab-modificar')">Modificar</button>
+        <div id="tab-clientes" class="tab active">
+            <button onclick="cargarDatos()">Refrescar</button>
+            <button onclick="ordenarCitas()">Ordenar</button>
+            <table><thead><tr><th>Fecha</th><th>Hora de solicitud</th><th>Nombre</th><th>Apellido</th><th>Tel</th><th>Condición</th><th>Total confirmadas en el mes</th><th>Servicio</th><th>Acciones</th></tr></thead><tbody id="lista-citas"></tbody></table>
+        </div>
+        <div id="tab-modificar" class="tab">
+            <h1>Gestión de Estructura</h1>
+            <div class="horario-box">
+                <h3>Configuración</h3>
+                <div>WhatsApp: <input type="text" id="input-wpp" placeholder="Ej: 584121234567"> <button onclick="guardarConfig('whatsapp', 'input-wpp', 'numero')">Aceptar</button></div>
+                <div style="margin-top:10px;">VIP (Mín servicios): <input type="number" id="input-vip"> <button onclick="guardarConfig('vip', 'input-vip', 'limite')">Aceptar</button></div>
+                <div style="margin-top:10px;">SVIP (Mín servicios): <input type="number" id="input-svip"> <button onclick="guardarConfig('svip', 'input-svip', 'limite')">Aceptar</button></div>
+                <h3>Horarios de Atención (Formato AM/PM)</h3>
+                <table id="tabla-horarios"><thead><tr><th>Día</th><th>Estado</th><th>Apertura</th><th>Cierre</th><th>Max Cliente x dia</th><th>Acción</th></tr></thead><tbody id="lista-horarios"></tbody></table>
+            </div>
+            <button onclick="agregarCategoria()">+ Agregar Nueva Categoría</button>
+            <div id="lista-categorias"></div>
         </div>
     </div>
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/12.16.0/firebase-app.js";
-        import { getFirestore, doc, getDoc, collection, getDocs, addDoc, query, where } from "https://www.gstatic.com/firebasejs/12.16.0/firebase-firestore.js";
+        import { getAuth, signInWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/12.16.0/firebase-auth.js";
+        import { getFirestore, collection, getDocs, doc, deleteDoc, addDoc, updateDoc, setDoc, getDoc } from "https://www.gstatic.com/firebasejs/12.16.0/firebase-firestore.js";
         import { initializeAppCheck, ReCaptchaV3Provider } from "https://www.gstatic.com/firebasejs/12.16.0/firebase-app-check.js";
         
         const app = initializeApp({apiKey: "AIzaSyDCN2ah_fSjW385KgAb48W8Cd9PhFDOQJ0", authDomain: "estilista-demo.firebaseapp.com", projectId: "estilista-demo", storageBucket: "estilista-demo.firebasestorage.app", messagingSenderId: "652196958867", appId: "1:652196958867:web:1c860102aa769ea6787366"});
@@ -50,49 +64,68 @@
             provider: new ReCaptchaV3Provider('6LdCelktAAAAAPFK_qUlAldO_foy9DlgZh0nliiV'),
             isTokenAutoRefreshEnabled: true
         });
+        
+        window.agregarCategoria = async () => { const nombre = prompt("Nombre de la categoría:"); if(nombre) await addDoc(collection(db, "categorias"), {nombre}); cargarDatos(); };
+        window.agregarServicio = async (cat) => { const nombre = prompt("Nombre del servicio:"); if(nombre) await addDoc(collection(db, "servicios"), {nombre, categoria: cat}); cargarDatos(); };
+        window.modificarCategoria = async (id, nombre) => { const nuevo = prompt("Nuevo nombre:", nombre); if(nuevo) await updateDoc(doc(db, "categorias", id), {nombre: nuevo}); cargarDatos(); };
+        window.eliminarCategoria = async (id) => { if(confirm("¿Eliminar?")) await deleteDoc(doc(db, "categorias", id)); cargarDatos(); };
+        window.modificarServicio = async (id) => { const nuevo = prompt("Nuevo nombre:"); if(nuevo) await updateDoc(doc(db, "servicios", id), {nombre: nuevo}); cargarDatos(); };
+        window.eliminarServicio = async (id) => { if(confirm("¿Eliminar?")) await deleteDoc(doc(db, "servicios", id)); cargarDatos(); };
 
-        document.getElementById('fecha-cita').setAttribute('min', new Date().toISOString().split('T')[0]);
-        window.validarDia = async () => {
-            const fechaVal = document.getElementById('fecha-cita').value;
-            const msg = document.getElementById('msg-dia');
-            const fechaSel = new Date(fechaVal + 'T00:00:00');
-            const hoy = new Date(); hoy.setHours(0,0,0,0);
-            if (fechaSel < hoy) { msg.innerHTML = "No se puede reservar en días pasados."; return; }
-            const diasSemana = ["Domingo", "Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado"];
-            const diaNombre = diasSemana[fechaSel.getDay()];
-            const snap = await getDoc(doc(db, "configuracion", diaNombre));
-            if (!snap.exists() || !snap.data().abierto) { msg.innerHTML = "Lo lamentamos, este día no se laborará."; return; }
-            const snapLim = await getDoc(doc(db, "configuracion", diaNombre));
-            const maxCitas = snapLim.exists() && snapLim.data().limite ? parseInt(snapLim.data().limite) : 0;
-            if (maxCitas > 0) {
-                const qCitas = query(collection(db, "citas"), where("fecha", "==", fechaVal));
-                const totalCitas = (await getDocs(qCitas)).size;
-                if (totalCitas >= maxCitas) { msg.innerHTML = "No hay disponibilidad para este día."; return; }
-            }
-            msg.innerHTML = "Día disponible.";
-            const container = document.getElementById('categorias-container');
-            container.style.display = "block";
-            container.innerHTML = "<strong>Seleccione categoría:</strong><br>";
-            (await getDocs(collection(db, "categorias"))).forEach(d => container.innerHTML += `<button class="btn-cat" onclick="cargarSubs('${d.data().nombre}')">${d.data().nombre}</button>`);
+        let citasLocales = [], citasCompletadas = [], config = {};
+        window.mostrarTab = (id) => { document.querySelectorAll('.tab').forEach(t => t.classList.remove('active')); document.getElementById(id).classList.add('active'); };
+        window.guardarConfig = async (docId, inputId, campo) => { const valor = document.getElementById(inputId).value; await setDoc(doc(db, "configuracion", docId), { [campo]: valor }, { merge: true }); alert("Guardado"); cargarDatos(); };
+        window.guardarHorario = async (dia) => { const apertura = document.getElementById(`apertura-${dia}`).value, cierre = document.getElementById(`cierre-${dia}`).value, limite = document.getElementById(`lim-${dia}`).value; await setDoc(doc(db, "configuracion", dia), { apertura, cierre, limite: parseInt(limite) }, { merge: true }); alert("Guardado"); };
+        window.toggleDia = async (dia) => { const docRef = doc(db, "configuracion", dia); const snap = await getDoc(docRef); const nuevoEstado = snap.exists() ? !snap.data().abierto : true; await setDoc(docRef, { abierto: nuevoEstado }, { merge: true }); cargarDatos(); };
+        window.confirmarCita = async (id, estadoActual) => { await updateDoc(doc(db, "citas", id), { confirmado: !estadoActual }); cargarDatos(); };
+        
+        window.gestionarCita = async (id, destino) => { 
+            const cita = citasLocales.find(c => c.id === id); 
+            if(cita) { 
+                await addDoc(collection(db, destino), { ...cita.data, fechaFin: new Date().toISOString() }); 
+                await deleteDoc(doc(db, "citas", id)); 
+                cargarDatos(); 
+            } 
         };
-        window.cargarSubs = async (cat) => {
-            window.selCat = cat;
-            const container = document.getElementById('subcategorias-container');
-            container.style.display = "block";
-            container.innerHTML = "<strong>Seleccione servicio:</strong><br>";
-            (await getDocs(collection(db, "servicios"))).forEach(d => { if(d.data().categoria === cat) container.innerHTML += `<button class="btn-sub" onclick="prepararForm('${d.data().nombre}')">${d.data().nombre}</button>`; });
+        
+        window.ordenarCitas = () => { citasLocales.sort((a, b) => { const fechaA = new Date(a.data.fecha); const fechaB = new Date(b.data.fecha); if (fechaA - fechaB !== 0) return fechaA - fechaB; return a.data.hora.localeCompare(b.data.hora); }); renderizarTabla(); };
+        
+        const renderizarTabla = () => {
+            const tbody = document.getElementById('lista-citas'); 
+            tbody.innerHTML = ""; 
+            const mesActual = new Date().toISOString().slice(0, 7);
+            citasLocales.forEach(item => {
+                const c = item.data, tel = c.telefono || "";
+                const fechaPartes = c.fecha ? c.fecha.split('-') : ["", "", ""];
+                const fechaFormateada = fechaPartes.length === 3 ? `${fechaPartes[2]}-${fechaPartes[1]}-${fechaPartes[0]}` : c.fecha;
+                const serviciosMes = citasCompletadas.filter(x => x.telefono === tel && x.fechaFin?.startsWith(mesActual)).length;
+                let condicion = "", clase = c.confirmado ? 'confirmado' : "";
+                if (config.svip && serviciosMes >= parseInt(config.svip)) { condicion = "SVIP"; clase += " svip"; }
+                else if (config.vip && serviciosMes >= parseInt(config.vip)) { condicion = "VIP"; clase += " vip"; }
+                tbody.innerHTML += `<tr class="${clase}"><td>${fechaFormateada}</td><td>${c.hora}</td><td>${c.nombre}</td><td>${c.apellido}</td><td>${tel}</td><td>${condicion}</td><td>${serviciosMes}</td><td>${c.subcategoria}</td><td><button onclick="confirmarCita('${item.id}', ${!!c.confirmado})">${c.confirmado ? 'Desconfirmar' : 'Confirmar'}</button><button onclick="gestionarCita('${item.id}', 'listo')">Listo</button><button onclick="gestionarCita('${item.id}', 'cancelados')">Cancelar</button></td></tr>`;
+            });
         };
-        window.prepararForm = (sub) => { window.selSub = sub; document.getElementById('formulario-reserva').style.display = "block"; };
-        window.solicitarCita = async () => {
-            const horaActual = new Date().toLocaleTimeString('es-VE', { hour: '2-digit', minute: '2-digit' });
-            const datos = { fecha: document.getElementById('fecha-cita').value, nombre: document.getElementById('nombre').value, apellido: document.getElementById('apellido').value, telefono: document.getElementById('telefono').value, direccion: document.getElementById('direccion').value, categoria: window.selCat, subcategoria: window.selSub, hora: horaActual };
-            await addDoc(collection(db, "citas"), datos);
-            const snapWpp = await getDoc(doc(db, "configuracion", "whatsapp"));
-            const numWpp = snapWpp.exists() ? snapWpp.data().numero : "";
-            const mensaje = `Solicitud de cita: ${datos.nombre} ${datos.apellido}, Fecha: ${datos.fecha}, Servicio: ${datos.subcategoria}, Dirección: ${datos.direccion}`;
-            window.open(`https://wa.me/${numWpp}?text=${encodeURIComponent(mensaje)}`, '_blank');
-            document.getElementById('modal-confirmacion').style.display = "flex";
+
+        window.cargarDatos = async () => {
+            citasLocales = []; citasCompletadas = [];
+            const divCat = document.getElementById('lista-categorias'), divHor = document.getElementById('lista-horarios');
+            divCat.innerHTML = ""; divHor.innerHTML = "";
+            const snapV = await getDoc(doc(db, "configuracion", "vip")), snapS = await getDoc(doc(db, "configuracion", "svip"));
+            config = { vip: snapV.exists() ? snapV.data().limite : null, svip: snapS.exists() ? snapS.data().limite : null };
+            document.getElementById('input-vip').value = config.vip || "";
+            document.getElementById('input-svip').value = config.svip || "";
+            const dias = ["Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado", "Domingo"];
+            for(let d of dias) { const snap = await getDoc(doc(db, "configuracion", d)); const data = snap.exists() ? snap.data() : {abierto: false, apertura: "08:00", cierre: "18:00", limite: 0}; divHor.innerHTML += `<tr><td>${d}</td><td><button onclick="toggleDia('${d}')">${data.abierto ? 'Abierto' : 'Cerrado'}</button></td><td><input type="time" id="apertura-${d}" value="${data.apertura || '08:00'}"></td><td><input type="time" id="cierre-${d}" value="${data.cierre || '18:00'}"></td><td><input type="number" id="lim-${d}" value="${data.limite || 0}" style="width:50px"></td><td><button onclick="guardarHorario('${d}')">Aceptar</button></td></tr>`; }
+            
+            (await getDocs(collection(db, "citas"))).forEach(d => citasLocales.push({ id: d.id, data: d.data() }));
+            (await getDocs(collection(db, "listo"))).forEach(d => citasCompletadas.push(d.data()));
+            
+            ordenarCitas();
+            
+            const cats = await getDocs(collection(db, "categorias")), servs = await getDocs(collection(db, "servicios"));
+            cats.forEach(cat => { let catNombre = cat.data().nombre, html = `<div class="cat-box"><div class="cat-header"><strong>${catNombre}</strong><div><button onclick="agregarServicio('${catNombre}')">+ Agregar Servicio</button><button onclick="modificarCategoria('${cat.id}', '${catNombre}')">Editar</button><button onclick="eliminarCategoria('${cat.id}')">Eliminar</button></div></div>`; servs.forEach(s => { if (s.data().categoria === catNombre) { html += `<div class="sub-item"><span>${s.data().nombre}</span><div><button onclick="modificarServicio('${s.id}')">Editar</button><button onclick="eliminarServicio('${s.id}')">Eliminar</button></div></div>`; } }); divCat.innerHTML += html + `</div>`; });
         };
+        document.getElementById('btn-entrar').addEventListener('click', async () => { try { await signInWithEmailAndPassword(getAuth(), document.getElementById('user').value, document.getElementById('pass').value); document.getElementById('login-box').style.display = 'none'; document.getElementById('admin-panel').style.display = 'block'; cargarDatos(); } catch (e) { alert("Error"); } });
     </script>
 </body>
 </html>
