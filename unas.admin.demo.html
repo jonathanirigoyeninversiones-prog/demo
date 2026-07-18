@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <title>Panel Administrativo</title>
+    <title>ccccc     Administrativo</title>
     <style>
         body { font-family: sans-serif; padding: 20px; }
         #login-box { display: flex; flex-direction: column; align-items: center; justify-content: center; height: 80vh; }
@@ -19,8 +19,6 @@
         .cat-box { border: 1px solid #333; padding: 10px; margin-top: 10px; border-radius: 5px; }
         .cat-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
         .sub-item { display: flex; justify-content: space-between; padding: 5px; border-bottom: 1px solid #eee; }
-        .sub-item:nth-child(odd) { background-color: transparent; }
-        .sub-item:nth-child(even) { background-color: #f2f2f2; }
         .horario-box { border: 1px solid #ccc; padding: 15px; margin-top: 20px; }
     </style>
 </head>
@@ -37,7 +35,7 @@
         <div id="tab-clientes" class="tab active">
             <button onclick="cargarDatos()">Refrescar</button>
             <button onclick="ordenarCitas()">Ordenar</button>
-            <table><thead><tr><th>Fecha</th><th>Hora</th><th>Nombre</th><th>Apellido</th><th>Tel</th><th>Condición</th><th>Servicio</th><th>Acciones</th></tr></thead><tbody id="lista-citas"></tbody></table>
+            <table><thead><tr><th>Fecha</th><th>Hora</th><th>Nombre</th><th>Apellido</th><th>Tel</th><th>Condición</th><th>Total del mes</th><th>Servicio</th><th>Acciones</th></tr></thead><tbody id="lista-citas"></tbody></table>
         </div>
         <div id="tab-modificar" class="tab">
             <h1>Gestión de Estructura</h1>
@@ -71,19 +69,20 @@
         window.guardarConfig = async (docId, inputId, campo) => { const valor = document.getElementById(inputId).value; await setDoc(doc(db, "configuracion", docId), { [campo]: valor }, { merge: true }); alert("Guardado"); cargarDatos(); };
         window.guardarHorario = async (dia) => { const apertura = document.getElementById(`apertura-${dia}`).value, cierre = document.getElementById(`cierre-${dia}`).value, limite = document.getElementById(`lim-${dia}`).value; await setDoc(doc(db, "configuracion", dia), { apertura, cierre, limite: parseInt(limite) }, { merge: true }); alert("Guardado"); };
         window.toggleDia = async (dia) => { const docRef = doc(db, "configuracion", dia); const snap = await getDoc(docRef); const nuevoEstado = snap.exists() ? !snap.data().abierto : true; await setDoc(docRef, { abierto: nuevoEstado }, { merge: true }); cargarDatos(); };
-        window.confirmarCita = async (id) => { const snap = await getDoc(doc(db, "citas", id)); await updateDoc(doc(db, "citas", id), { confirmado: !snap.data().confirmado }); cargarDatos(); };
-        window.gestionarCita = async (id, destino) => { const cita = citasLocales.find(c => c.id === id); if(cita) { await addDoc(collection(db, destino), cita.data); await deleteDoc(doc(db, "citas", id)); } cargarDatos(); };
+        window.confirmarCita = async (id, estadoActual) => { await updateDoc(doc(db, "citas", id), { confirmado: !estadoActual }); cargarDatos(); };
+        window.gestionarCita = async (id, destino) => { const cita = citasLocales.find(c => c.id === id); if(cita) { await addDoc(collection(db, destino), { ...cita.data, fechaFin: new Date().toISOString() }); await deleteDoc(doc(db, "citas", id)); } cargarDatos(); };
         window.ordenarCitas = () => { citasLocales.sort((a, b) => { const fechaA = new Date(a.data.fecha); const fechaB = new Date(b.data.fecha); if (fechaA - fechaB !== 0) return fechaA - fechaB; return a.data.hora.localeCompare(b.data.hora); }); renderizarTabla(); };
         
         const renderizarTabla = () => {
             const tbody = document.getElementById('lista-citas'); tbody.innerHTML = "";
+            const mesActual = new Date().toISOString().slice(0, 7);
             citasLocales.forEach(item => {
                 const c = item.data, tel = c.telefono || "";
-                const servicios = citasCompletadas.filter(x => x.telefono === tel).length;
+                const serviciosMes = citasCompletadas.filter(x => x.telefono === tel && x.fechaFin?.startsWith(mesActual)).length;
                 let condicion = "", clase = c.confirmado ? 'confirmado' : "";
-                if (config.svip && servicios >= parseInt(config.svip)) { condicion = "SVIP"; clase += " svip"; }
-                else if (config.vip && servicios >= parseInt(config.vip)) { condicion = "VIP"; clase += " vip"; }
-                tbody.innerHTML += `<tr class="${clase}"><td>${c.fecha}</td><td>${c.hora}</td><td>${c.nombre}</td><td>${c.apellido}</td><td>${tel}</td><td>${condicion}</td><td>${c.subcategoria}</td><td><button onclick="confirmarCita('${item.id}')">Conf</button><button onclick="gestionarCita('${item.id}', 'listo')">Listo</button></td></tr>`;
+                if (config.svip && serviciosMes >= parseInt(config.svip)) { condicion = "SVIP"; clase += " svip"; }
+                else if (config.vip && serviciosMes >= parseInt(config.vip)) { condicion = "VIP"; clase += " vip"; }
+                tbody.innerHTML += `<tr class="${clase}"><td>${c.fecha}</td><td>${c.hora}</td><td>${c.nombre}</td><td>${c.apellido}</td><td>${tel}</td><td>${condicion}</td><td>${serviciosMes}</td><td>${c.subcategoria}</td><td><button onclick="confirmarCita('${item.id}', ${!!c.confirmado})">${c.confirmado ? 'Desconfirmar' : 'Confirmar'}</button><button onclick="gestionarCita('${item.id}', 'listo')">Listo</button><button onclick="gestionarCita('${item.id}', 'cancelados')">Cancelar</button></td></tr>`;
             });
         };
 
