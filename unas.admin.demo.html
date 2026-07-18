@@ -88,10 +88,8 @@
             const mesActual = new Date().toISOString().slice(0, 7);
             citasLocales.forEach(item => {
                 const c = item.data, tel = c.telefono || "";
-                // Transformación de fecha AAAA-MM-DD a DD-MM-AAAA
                 const fechaPartes = c.fecha ? c.fecha.split('-') : ["", "", ""];
                 const fechaFormateada = fechaPartes.length === 3 ? `${fechaPartes[2]}-${fechaPartes[1]}-${fechaPartes[0]}` : c.fecha;
-                
                 const serviciosMes = citasCompletadas.filter(x => x.telefono === tel && x.fechaFin?.startsWith(mesActual)).length;
                 let condicion = "", clase = c.confirmado ? 'confirmado' : "";
                 if (config.svip && serviciosMes >= parseInt(config.svip)) { condicion = "SVIP"; clase += " svip"; }
@@ -114,7 +112,9 @@
             (await getDocs(collection(db, "citas"))).forEach(d => citasLocales.push({ id: d.id, data: d.data() }));
             (await getDocs(collection(db, "listo"))).forEach(d => citasCompletadas.push(d.data()));
             
-            renderizarTabla();
+            // Orden automático al cargar datos
+            ordenarCitas();
+            
             const cats = await getDocs(collection(db, "categorias")), servs = await getDocs(collection(db, "servicios"));
             cats.forEach(cat => { let catNombre = cat.data().nombre, html = `<div class="cat-box"><div class="cat-header"><strong>${catNombre}</strong><div><button onclick="agregarServicio('${catNombre}')">+ Agregar Servicio</button><button onclick="modificarCategoria('${cat.id}', '${catNombre}')">Editar</button><button onclick="eliminarCategoria('${cat.id}')">Eliminar</button></div></div>`; servs.forEach(s => { if (s.data().categoria === catNombre) { html += `<div class="sub-item"><span>${s.data().nombre}</span><div><button onclick="modificarServicio('${s.id}')">Editar</button><button onclick="eliminarServicio('${s.id}')">Eliminar</button></div></div>`; } }); divCat.innerHTML += html + `</div>`; });
         };
