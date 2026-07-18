@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <title>111 Reserva de Citas - Salon Beauty</title>
+    <title>Reserva de Citas - Salon Beauty</title>
     <style>
         body { background-image: url('fondo-unas.png'); background-size: cover; background-position: center; min-height: 100vh; margin: 0; font-family: sans-serif; }
         .container { background: rgba(255, 255, 255, 0.95); padding: 30px; border-radius: 15px; max-width: 600px; margin: 40px auto; }
@@ -117,6 +117,32 @@
             window.open(`https://wa.me/${numWpp}?text=${encodeURIComponent(mensaje)}`, '_blank');
             document.getElementById('modal-confirmacion').style.display = "flex";
         };
+    </script>
+
+    <!-- Código de verificación del interruptor -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/12.16.0/firebase-app.js";
+        import { getFirestore, doc, getDoc } from "https://www.gstatic.com/firebasejs/12.16.0/firebase-firestore.js";
+
+        const adminApp = initializeApp({
+            projectId: "master-web-admin"
+        }, "adminApp");
+        
+        const dbAdmin = getFirestore(adminApp);
+
+        async function verificarAcceso() {
+            try {
+                const docRef = doc(dbAdmin, "Master_web", "demo_estilista");
+                const docSnap = await getDoc(docRef);
+
+                if (docSnap.exists() && docSnap.data().activo === false) {
+                    document.body.innerHTML = "<h2 style='text-align:center; margin-top:20%;'>Sitio en mantenimiento. Vuelva pronto.</h2>";
+                }
+            } catch (error) {
+                console.error("Error al verificar acceso:", error);
+            }
+        }
+        verificarAcceso();
     </script>
 </body>
 </html>
