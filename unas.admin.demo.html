@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <title>zzzz Panel Administrativo</title>
+    <title>Panel Administrativo</title>
     <style>
         body { font-family: sans-serif; padding: 20px; }
         #login-box { display: flex; flex-direction: column; align-items: center; justify-content: center; height: 80vh; }
@@ -26,7 +26,7 @@
     <div id="login-box">
         <h3>Acceso Administrativo</h3>
         <input type="email" id="user" placeholder="Correo">
-        <input type="password" id="pass" placeholder="Чontraseña">
+        <input type="password" id="pass" placeholder="Contraseña">
         <button id="btn-entrar">Entrar</button>
     </div>
     <div id="admin-panel" style="display:none;">
@@ -88,11 +88,15 @@
             const mesActual = new Date().toISOString().slice(0, 7);
             citasLocales.forEach(item => {
                 const c = item.data, tel = c.telefono || "";
+                // Transformación de fecha AAAA-MM-DD a DD-MM-AAAA
+                const fechaPartes = c.fecha ? c.fecha.split('-') : ["", "", ""];
+                const fechaFormateada = fechaPartes.length === 3 ? `${fechaPartes[2]}-${fechaPartes[1]}-${fechaPartes[0]}` : c.fecha;
+                
                 const serviciosMes = citasCompletadas.filter(x => x.telefono === tel && x.fechaFin?.startsWith(mesActual)).length;
                 let condicion = "", clase = c.confirmado ? 'confirmado' : "";
                 if (config.svip && serviciosMes >= parseInt(config.svip)) { condicion = "SVIP"; clase += " svip"; }
                 else if (config.vip && serviciosMes >= parseInt(config.vip)) { condicion = "VIP"; clase += " vip"; }
-                tbody.innerHTML += `<tr class="${clase}"><td>${c.fecha}</td><td>${c.hora}</td><td>${c.nombre}</td><td>${c.apellido}</td><td>${tel}</td><td>${condicion}</td><td>${serviciosMes}</td><td>${c.subcategoria}</td><td><button onclick="confirmarCita('${item.id}', ${!!c.confirmado})">${c.confirmado ? 'Desconfirmar' : 'Confirmar'}</button><button onclick="gestionarCita('${item.id}', 'listo')">Listo</button><button onclick="gestionarCita('${item.id}', 'cancelados')">Cancelar</button></td></tr>`;
+                tbody.innerHTML += `<tr class="${clase}"><td>${fechaFormateada}</td><td>${c.hora}</td><td>${c.nombre}</td><td>${c.apellido}</td><td>${tel}</td><td>${condicion}</td><td>${serviciosMes}</td><td>${c.subcategoria}</td><td><button onclick="confirmarCita('${item.id}', ${!!c.confirmado})">${c.confirmado ? 'Desconfirmar' : 'Confirmar'}</button><button onclick="gestionarCita('${item.id}', 'listo')">Listo</button><button onclick="gestionarCita('${item.id}', 'cancelados')">Cancelar</button></td></tr>`;
             });
         };
 
