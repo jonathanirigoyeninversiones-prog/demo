@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <title>Reserva de Citas - Salon Beauty</title>
+    <title>zzzz Reserva de Citas - Salon Beauty</title>
     <style>
         body { background-image: url('fondo-unas.png'); background-size: cover; background-position: center; min-height: 100vh; margin: 0; font-family: sans-serif; }
         .container { background: rgba(255, 255, 255, 0.95); padding: 30px; border-radius: 15px; max-width: 600px; margin: 40px auto; }
@@ -38,39 +38,30 @@
         import { initializeApp } from "https://www.gstatic.com/firebasejs/12.16.0/firebase-app.js";
         import { getFirestore, doc, getDoc, collection, getDocs, addDoc, query, where } from "https://www.gstatic.com/firebasejs/12.16.0/firebase-firestore.js";
         const db = getFirestore(initializeApp({apiKey: "AIzaSyDCN2ah_fSjW385KgAb48W8Cd9PhFDOQJ0", authDomain: "estilista-demo.firebaseapp.com", projectId: "estilista-demo", storageBucket: "estilista-demo.firebasestorage.app", messagingSenderId: "652196958867", appId: "1:652196958867:web:1c860102aa769ea6787366"}));
-
         document.getElementById('fecha-cita').setAttribute('min', new Date().toISOString().split('T')[0]);
-
         window.validarDia = async () => {
             const fechaVal = document.getElementById('fecha-cita').value;
             const msg = document.getElementById('msg-dia');
             const fechaSel = new Date(fechaVal + 'T00:00:00');
             const hoy = new Date(); hoy.setHours(0,0,0,0);
-            
             if (fechaSel < hoy) { msg.innerHTML = "No se puede reservar en días pasados."; return; }
-
             const diasSemana = ["Domingo", "Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado"];
             const diaNombre = diasSemana[fechaSel.getDay()];
-            
             const snap = await getDoc(doc(db, "configuracion", diaNombre));
             if (!snap.exists() || !snap.data().abierto) { msg.innerHTML = "Lo lamentamos, este día no se laborará."; return; }
-
             const snapLim = await getDoc(doc(db, "configuracion", diaNombre));
             const maxCitas = snapLim.exists() && snapLim.data().limite ? parseInt(snapLim.data().limite) : 0;
-            
             if (maxCitas > 0) {
                 const qCitas = query(collection(db, "citas"), where("fecha", "==", fechaVal));
                 const totalCitas = (await getDocs(qCitas)).size;
                 if (totalCitas >= maxCitas) { msg.innerHTML = "No hay disponibilidad para este día."; return; }
             }
-
             msg.innerHTML = "Día disponible.";
             const container = document.getElementById('categorias-container');
             container.style.display = "block";
             container.innerHTML = "<strong>Seleccione categoría:</strong><br>";
             (await getDocs(collection(db, "categorias"))).forEach(d => container.innerHTML += `<button class="btn-cat" onclick="cargarSubs('${d.data().nombre}')">${d.data().nombre}</button>`);
         };
-
         window.cargarSubs = async (cat) => {
             window.selCat = cat;
             const container = document.getElementById('subcategorias-container');
@@ -78,22 +69,10 @@
             container.innerHTML = "<strong>Seleccione servicio:</strong><br>";
             (await getDocs(collection(db, "servicios"))).forEach(d => { if(d.data().categoria === cat) container.innerHTML += `<button class="btn-sub" onclick="prepararForm('${d.data().nombre}')">${d.data().nombre}</button>`; });
         };
-
         window.prepararForm = (sub) => { window.selSub = sub; document.getElementById('formulario-reserva').style.display = "block"; };
-
         window.solicitarCita = async () => {
-            // Se captura la hora local al momento de solicitar la cita
             const horaActual = new Date().toLocaleTimeString('es-VE', { hour: '2-digit', minute: '2-digit' });
-            const datos = { 
-                fecha: document.getElementById('fecha-cita').value, 
-                nombre: document.getElementById('nombre').value, 
-                apellido: document.getElementById('apellido').value, 
-                telefono: document.getElementById('telefono').value, 
-                direccion: document.getElementById('direccion').value, 
-                categoria: window.selCat, 
-                subcategoria: window.selSub,
-                hora: horaActual 
-            };
+            const datos = { fecha: document.getElementById('fecha-cita').value, nombre: document.getElementById('nombre').value, apellido: document.getElementById('apellido').value, telefono: document.getElementById('telefono').value, direccion: document.getElementById('direccion').value, categoria: window.selCat, subcategoria: window.selSub, hora: horaActual };
             await addDoc(collection(db, "citas"), datos);
             const snapWpp = await getDoc(doc(db, "configuracion", "whatsapp"));
             const numWpp = snapWpp.exists() ? snapWpp.data().numero : "";
