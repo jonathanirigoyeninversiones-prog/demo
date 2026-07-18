@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <title>Panel Administrativo</title>
+    <title>xxx Panel Administrativo</title>
     <style>
         body { font-family: sans-serif; padding: 20px; }
         #login-box { display: flex; flex-direction: column; align-items: center; justify-content: center; height: 80vh; }
@@ -12,7 +12,7 @@
         table { width: 100%; border-collapse: collapse; margin-top: 10px; }
         th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
         
-        /* Estilos de tablas */
+        /* Filas alternas solo para tablas */
         table tr:nth-child(odd) { background-color: transparent; }
         table tr:nth-child(even) { background-color: #f2f2f2; }
         
@@ -20,10 +20,8 @@
         .cat-box { border: 1px solid #333; padding: 10px; margin-top: 10px; border-radius: 5px; }
         .cat-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
         
-        /* Estilos de sub-items (Servicios) alternos */
-        .sub-item { display: flex; justify-content: space-between; padding: 5px; border-bottom: 1px solid #eee; }
-        .cat-box .sub-item:nth-child(odd) { background-color: transparent; }
-        .cat-box .sub-item:nth-child(even) { background-color: #f2f2f2; }
+        /* Estilos de sub-items SIN afectar la lógica de los botones */
+        .sub-item { display: flex; justify-content: space-between; padding: 5px; border-bottom: 1px solid #eee; background: #ffffff; }
         
         .horario-box { border: 1px solid #ccc; padding: 15px; margin-top: 20px; }
     </style>
