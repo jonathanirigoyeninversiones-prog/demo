@@ -12,14 +12,19 @@
         table { width: 100%; border-collapse: collapse; margin-top: 10px; }
         th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
         
-        /* Filas alternas solo para tablas */
+        /* Filas alternas para tablas */
         table tr:nth-child(odd) { background-color: transparent; }
         table tr:nth-child(even) { background-color: #f2f2f2; }
         
         .confirmado { background-color: #d4edda !important; }
         .cat-box { border: 1px solid #333; padding: 10px; margin-top: 10px; border-radius: 5px; }
         .cat-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
-        .sub-item { display: flex; justify-content: space-between; padding: 5px; border-bottom: 1px solid #eee; background: #ffffff; }
+        
+        /* Estilos de sub-items alternos sin romper la lógica */
+        .sub-item { display: flex; justify-content: space-between; padding: 5px; border-bottom: 1px solid #eee; }
+        .sub-item:nth-child(odd) { background-color: transparent; }
+        .sub-item:nth-child(even) { background-color: #f2f2f2; }
+        
         .horario-box { border: 1px solid #ccc; padding: 15px; margin-top: 20px; }
     </style>
 </head>
@@ -67,7 +72,6 @@
         
         const db = getFirestore(initializeApp({apiKey: "AIzaSyDCN2ah_fSjW385KgAb48W8Cd9PhFDOQJ0", authDomain: "estilista-demo.firebaseapp.com", projectId: "estilista-demo", storageBucket: "estilista-demo.firebasestorage.app", messagingSenderId: "652196958867", appId: "1:652196958867:web:1c860102aa769ea6787366"}));
         
-        // --- FUNCIONES DE LÓGICA RESTAURADAS ---
         window.agregarCategoria = async () => { const nombre = prompt("Nombre de la categoría:"); if(nombre) await addDoc(collection(db, "categorias"), {nombre}); cargarDatos(); };
         window.agregarServicio = async (cat) => { const nombre = prompt("Nombre del servicio:"); if(nombre) await addDoc(collection(db, "servicios"), {nombre, categoria: cat}); cargarDatos(); };
         window.modificarCategoria = async (id, nombre) => { const nuevo = prompt("Nuevo nombre:", nombre); if(nuevo) await updateDoc(doc(db, "categorias", id), {nombre: nuevo}); cargarDatos(); };
