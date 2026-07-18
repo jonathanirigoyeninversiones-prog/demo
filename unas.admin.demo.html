@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <title>reloj Panel Administrativo</title>
+    <title>1am pm Panel Administrativo</title>
     <style>
         body { font-family: sans-serif; padding: 20px; }
         #login-box { display: flex; flex-direction: column; align-items: center; justify-content: center; height: 80vh; }
@@ -44,7 +44,7 @@
                 <div>WhatsApp: <input type="text" id="input-wpp" placeholder="Ej: 584121234567"> <button onclick="guardarConfig('whatsapp', 'input-wpp', 'numero')">Aceptar</button></div>
                 <div style="margin-top:10px;">VIP (Mín servicios): <input type="number" id="input-vip"> <button onclick="guardarConfig('vip', 'input-vip', 'limite')">Aceptar</button></div>
                 <div style="margin-top:10px;">SVIP (Mín servicios): <input type="number" id="input-svip"> <button onclick="guardarConfig('svip', 'input-svip', 'limite')">Aceptar</button></div>
-                <h3>Horarios de Atención (Formato AM/PM)</h3>
+                <h3>Horarios de Atención</h3>
                 <table id="tabla-horarios"><thead><tr><th>Día</th><th>Estado</th><th>Apertura</th><th>Cierre</th><th>Máx</th><th>Acción</th></tr></thead><tbody id="lista-horarios"></tbody></table>
             </div>
             <button onclick="agregarCategoria()">+ Agregar Nueva Categoría</button>
@@ -118,6 +118,7 @@
             for(let d of dias) { 
                 const snap = await getDoc(doc(db, "configuracion", d)); 
                 const data = snap.exists() ? snap.data() : {abierto: false, apertura: "08:00", cierre: "18:00", limite: 0}; 
+                // Los inputs tipo time por defecto usan formato 24h, pero la interfaz permite a los usuarios seleccionar en sus dispositivos
                 divHor.innerHTML += `<tr><td>${d}</td><td><button onclick="toggleDia('${d}')">${data.abierto ? 'Abierto' : 'Cerrado'}</button></td><td><input type="time" id="apertura-${d}" value="${data.apertura || '08:00'}"></td><td><input type="time" id="cierre-${d}" value="${data.cierre || '18:00'}"></td><td><input type="number" id="lim-${d}" value="${data.limite || 0}" style="width:50px"></td><td><button onclick="guardarHorario('${d}')">Aceptar</button></td></tr>`; 
             }
             
@@ -129,7 +130,7 @@
             const cats = await getDocs(collection(db, "categorias")), servs = await getDocs(collection(db, "servicios"));
             cats.forEach(cat => { let catNombre = cat.data().nombre, html = `<div class="cat-box"><div class="cat-header"><strong>${catNombre}</strong><div><button onclick="agregarServicio('${catNombre}')">+ Agregar Servicio</button><button onclick="modificarCategoria('${cat.id}', '${catNombre}')">Editar</button><button onclick="eliminarCategoria('${cat.id}')">Eliminar</button></div></div>`; servs.forEach(s => { if (s.data().categoria === catNombre) { html += `<div class="sub-item"><span>${s.data().nombre}</span><div><button onclick="modificarServicio('${s.id}')">Editar</button><button onclick="eliminarServicio('${s.id}')">Eliminar</button></div></div>`; } }); divCat.innerHTML += html + `</div>`; });
         };
-        document.getElementById('btn-entrar').addEventListener('click', async () => { try { await signInWithEmailAndPassword(getAuth(), document.getElementById('user').value, document.getElementById('pass').value); document.getElementById('login-box').style.display = 'none'; document.getElementById('admin-panel').style.display = 'block'; cargarDatos(); setInterval(cargarDatos, 30000); } catch (e) { alert("Error"); } });
+        document.getElementById('btn-entrar').addEventListener('click', async () => { try { await signInWithEmailAndPassword(getAuth(), document.getElementById('user').value, document.getElementById('pass').value); document.getElementById('login-box').style.display = 'none'; document.getElementById('admin-panel').style.display = 'block'; cargarDatos(); } catch (e) { alert("Error"); } });
     </script>
 </body>
 </html>
