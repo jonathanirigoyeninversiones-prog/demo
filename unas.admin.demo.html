@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <title>Panel Administrativo</title>
+    <title>xxx Panel Administrativo</title>
     <style>
         body { font-family: sans-serif; padding: 20px; }
         #login-box { display: flex; flex-direction: column; align-items: center; justify-content: center; height: 80vh; }
@@ -31,7 +31,7 @@
         <button onclick="mostrarTab('tab-modificar')">Modificar</button>
         
         <div id="tab-clientes" class="tab active">
-            <button onclick="cargarCitas()">Refrescar Citas</button>
+            <button onclick="cargarDatos()">Refrescar</button>
             <button onclick="ordenarCitas()">Ordenar</button>
             <table><thead><tr><th>Fecha</th><th>Hora de solicitud</th><th>Nombre</th><th>Apellido</th><th>Tel</th><th>Dirección</th><th>Servicio</th><th>Acciones</th></tr></thead><tbody id="lista-citas"></tbody></table>
         </div>
@@ -45,9 +45,8 @@
                     <button onclick="guardarConfig('whatsapp', 'input-wpp', 'numero')">Aceptar</button>
                 </div>
                 <h3>Horarios de Atención</h3>
-                <button onclick="cargarHorarios()">Refrescar Horarios</button>
                 <table id="tabla-horarios">
-                    <thead><tr><th>Día</th><th>Estado</th><th>Apertura (ej: 08:00 AM)</th><th>Cierre (ej: 06:00 PM)</th><th>Máx</th><th>Acción</th></tr></thead>
+                    <thead><tr><th>Día</th><th>Estado</th><th>Apertura</th><th>Cierre</th><th>Máx</th><th>Acción</th></tr></thead>
                     <tbody id="lista-horarios"></tbody>
                 </table>
             </div>
@@ -59,7 +58,7 @@
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/12.16.0/firebase-app.js";
         import { getAuth, signInWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/12.16.0/firebase-auth.js";
-        import { getFirestore, collection, getDocs, doc, updateDoc, setDoc, getDoc, addDoc, deleteDoc, query, where } from "https://www.gstatic.com/firebasejs/12.16.0/firebase-firestore.js";
+        import { getFirestore, collection, getDocs, doc, deleteDoc, addDoc, updateDoc, setDoc, getDoc, query, where } from "https://www.gstatic.com/firebasejs/12.16.0/firebase-firestore.js";
         
         const db = getFirestore(initializeApp({apiKey: "AIzaSyDCN2ah_fSjW385KgAb48W8Cd9PhFDOQJ0", authDomain: "estilista-demo.firebaseapp.com", projectId: "estilista-demo", storageBucket: "estilista-demo.firebasestorage.app", messagingSenderId: "652196958867", appId: "1:652196958867:web:1c860102aa769ea6787366"}));
         
@@ -68,8 +67,6 @@
         window.mostrarTab = (id) => {
             document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
             document.getElementById(id).classList.add('active');
-            if(id === 'tab-clientes') cargarCitas();
-            if(id === 'tab-modificar') cargarHorarios();
         };
 
         window.guardarConfig = async (docId, inputId, campo) => {
@@ -78,6 +75,7 @@
             alert("Guardado exitosamente");
         };
 
+        // Nueva función para guardar horario completo
         window.guardarHorario = async (dia) => {
             const apertura = document.getElementById(`apertura-${dia}`).value;
             const cierre = document.getElementById(`cierre-${dia}`).value;
@@ -91,19 +89,19 @@
             const snap = await getDoc(docRef);
             const nuevoEstado = snap.exists() ? !snap.data().abierto : true;
             await setDoc(docRef, { abierto: nuevoEstado }, { merge: true });
-            cargarHorarios();
+            cargarDatos();
         };
 
         window.confirmarCita = async (id) => {
             const snap = await getDoc(doc(db, "citas", id));
             await updateDoc(doc(db, "citas", id), { confirmado: !snap.data().confirmado });
-            cargarCitas();
+            cargarDatos();
         };
         
         window.gestionarCita = async (id, destino) => {
             const cita = citasLocales.find(c => c.id === id);
             if(cita) { await addDoc(collection(db, destino), cita.data); await deleteDoc(doc(db, "citas", id)); }
-            cargarCitas();
+            cargarDatos();
         };
 
         window.ordenarCitas = () => {
@@ -136,42 +134,62 @@
             });
         };
 
-        window.cargarCitas = async () => {
+        window.cargarDatos = async () => {
             citasLocales = [];
-            const querySnapshot = await getDocs(collection(db, "citas"));
-            querySnapshot.forEach(d => { citasLocales.push({ id: d.id, data: d.data() }); });
-            renderizarTabla();
-        };
-
-        window.cargarHorarios = async () => {
+            const tbody = document.getElementById('lista-citas');
+            const divCat = document.getElementById('lista-categorias');
             const divHor = document.getElementById('lista-horarios');
-            divHor.innerHTML = "";
+            tbody.innerHTML = ""; divCat.innerHTML = ""; divHor.innerHTML = "";
+            
             const snapWpp = await getDoc(doc(db, "configuracion", "whatsapp"));
             if(snapWpp.exists()) document.getElementById('input-wpp').value = snapWpp.data().numero || "";
-            
+
             const dias = ["Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado", "Domingo"];
             for(let d of dias) {
                 const snap = await getDoc(doc(db, "configuracion", d));
-                const data = snap.exists() ? snap.data() : {abierto: false, apertura: "08:00 AM", cierre: "06:00 PM", limite: 0};
-                divHor.innerHTML += `<tr><td>${d}</td>
+                const data = snap.exists() ? snap.data() : {abierto: false, apertura: "08:00", cierre: "18:00", limite: 0};
+                divHor.innerHTML += `<tr>
+                    <td>${d}</td>
                     <td><button onclick="toggleDia('${d}')">${data.abierto ? 'Abierto' : 'Cerrado'}</button></td>
-                    <td><input type="text" id="apertura-${d}" value="${data.apertura || '08:00 AM'}"></td>
-                    <td><input type="text" id="cierre-${d}" value="${data.cierre || '06:00 PM'}"></td>
+                    <td><input type="time" id="apertura-${d}" value="${data.apertura || '08:00'}"></td>
+                    <td><input type="time" id="cierre-${d}" value="${data.cierre || '18:00'}"></td>
                     <td><input type="number" id="lim-${d}" value="${data.limite || 0}" style="width:50px"></td>
-                    <td><button onclick="guardarHorario('${d}')">Aceptar</button></td></tr>`;
+                    <td><button onclick="guardarHorario('${d}')">Aceptar</button></td>
+                </tr>`;
             }
+
+            const querySnapshot = await getDocs(collection(db, "citas"));
+            querySnapshot.forEach(d => {
+                citasLocales.push({ id: d.id, data: d.data() });
+            });
+            renderizarTabla();
+
+            const cats = await getDocs(collection(db, "categorias"));
+            const servs = await getDocs(collection(db, "servicios"));
+            cats.forEach(cat => {
+                let catNombre = cat.data().nombre;
+                let html = `<div class="cat-box"><div class="cat-header"><strong>${catNombre}</strong>
+                <div><button onclick="agregarServicio('${catNombre}')">+ Agregar Servicio</button>
+                <button onclick="modificarCategoria('${cat.id}', '${catNombre}')">Editar Cat</button>
+                <button onclick="eliminarCategoria('${cat.id}')">Eliminar Cat</button></div></div>`;
+                servs.forEach(s => { 
+                    if (s.data().categoria === catNombre) {
+                        html += `<div class="sub-item"><span>${s.data().nombre}</span>
+                        <div><button onclick="modificarServicio('${s.id}')">Editar</button>
+                        <button onclick="eliminarServicio('${s.id}')">Eliminar</button></div></div>`;
+                    }
+                });
+                divCat.innerHTML += html + `</div>`;
+            });
         };
-
-        // Funciones auxiliares para categorías (sin refresco global)
-        window.agregarCategoria = async () => { const n = prompt("Nombre de la nueva categoría:"); if(n) { await addDoc(collection(db, "categorias"), { nombre: n }); cargarEstructura(); } };
-        window.cargarEstructura = async () => { /* lógica de carga de categorías omitida para brevedad en este bloque */ };
-
+        
         document.getElementById('btn-entrar').addEventListener('click', async () => {
             try {
                 await signInWithEmailAndPassword(getAuth(), document.getElementById('user').value, document.getElementById('pass').value);
                 document.getElementById('login-box').style.display = 'none';
                 document.getElementById('admin-panel').style.display = 'block';
-                cargarCitas();
+                cargarDatos();
+                setInterval(cargarDatos, 30000); 
             } catch (e) { alert("Error de acceso"); }
         });
     </script>
