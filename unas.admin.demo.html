@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <title>Panel Administrativo</title>
+    <title>xxx Panel Administrativo</title>
     <style>
         body { font-family: sans-serif; padding: 20px; }
         #login-box { display: flex; flex-direction: column; align-items: center; justify-content: center; height: 80vh; }
@@ -45,7 +45,10 @@
                     <button onclick="guardarConfig('whatsapp', 'input-wpp', 'numero')">Aceptar</button>
                 </div>
                 <h3>Horarios de Atención</h3>
-                <div id="lista-horarios"></div>
+                <table id="tabla-horarios">
+                    <thead><tr><th>Día</th><th>Estado</th><th>Apertura</th><th>Cierre</th><th>Máx</th><th>Acción</th></tr></thead>
+                    <tbody id="lista-horarios"></tbody>
+                </table>
             </div>
             <button onclick="agregarCategoria()">+ Agregar Nueva Categoría</button>
             <div id="lista-categorias"></div>
@@ -59,7 +62,6 @@
         
         const db = getFirestore(initializeApp({apiKey: "AIzaSyDCN2ah_fSjW385KgAb48W8Cd9PhFDOQJ0", authDomain: "estilista-demo.firebaseapp.com", projectId: "estilista-demo", storageBucket: "estilista-demo.firebasestorage.app", messagingSenderId: "652196958867", appId: "1:652196958867:web:1c860102aa769ea6787366"}));
         
-        // Variable global para almacenar citas actuales y ordenar
         let citasLocales = [];
 
         window.mostrarTab = (id) => {
@@ -73,10 +75,13 @@
             alert("Guardado exitosamente");
         };
 
-        window.guardarLimiteDia = async (dia, inputId) => {
-            const valor = document.getElementById(inputId).value;
-            await setDoc(doc(db, "configuracion", dia), { limite: parseInt(valor) }, { merge: true });
-            alert("Límite guardado");
+        // Nueva función para guardar horario completo
+        window.guardarHorario = async (dia) => {
+            const apertura = document.getElementById(`apertura-${dia}`).value;
+            const cierre = document.getElementById(`cierre-${dia}`).value;
+            const limite = document.getElementById(`lim-${dia}`).value;
+            await setDoc(doc(db, "configuracion", dia), { apertura, cierre, limite: parseInt(limite) }, { merge: true });
+            alert(`Horario de ${dia} actualizado`);
         };
 
         window.toggleDia = async (dia) => {
@@ -85,11 +90,6 @@
             const nuevoEstado = snap.exists() ? !snap.data().abierto : true;
             await setDoc(docRef, { abierto: nuevoEstado }, { merge: true });
             cargarDatos();
-        };
-
-        window.actualizarCierre = async (dia) => {
-            const hora = prompt("Introduce hora de cierre (ej: 06:00 PM):");
-            if(hora) { await setDoc(doc(db, "configuracion", dia), { cierre: hora }, { merge: true }); cargarDatos(); }
         };
 
         window.confirmarCita = async (id) => {
@@ -147,11 +147,15 @@
             const dias = ["Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado", "Domingo"];
             for(let d of dias) {
                 const snap = await getDoc(doc(db, "configuracion", d));
-                const data = snap.exists() ? snap.data() : {abierto: false, cierre: "No definido", limite: 0};
-                divHor.innerHTML += `<div>${d}: <button onclick="toggleDia('${d}')">${data.abierto ? 'Abierto' : 'Cerrado'}</button> 
-                Cierre: <span onclick="actualizarCierre('${d}')" style="cursor:pointer; color:blue;">${data.cierre}</span>
-                Máx: <input type="number" id="lim-${d}" value="${data.limite || 0}" style="width:50px">
-                <button onclick="guardarLimiteDia('${d}', 'lim-${d}')">Aceptar</button></div>`;
+                const data = snap.exists() ? snap.data() : {abierto: false, apertura: "08:00", cierre: "18:00", limite: 0};
+                divHor.innerHTML += `<tr>
+                    <td>${d}</td>
+                    <td><button onclick="toggleDia('${d}')">${data.abierto ? 'Abierto' : 'Cerrado'}</button></td>
+                    <td><input type="time" id="apertura-${d}" value="${data.apertura || '08:00'}"></td>
+                    <td><input type="time" id="cierre-${d}" value="${data.cierre || '18:00'}"></td>
+                    <td><input type="number" id="lim-${d}" value="${data.limite || 0}" style="width:50px"></td>
+                    <td><button onclick="guardarHorario('${d}')">Aceptar</button></td>
+                </tr>`;
             }
 
             const querySnapshot = await getDocs(collection(db, "citas"));
