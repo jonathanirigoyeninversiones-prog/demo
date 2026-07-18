@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <title>Panel Administrativo</title>
+    <title>zzzz Panel Administrativo</title>
     <style>
         body { font-family: sans-serif; padding: 20px; }
         #login-box { display: flex; flex-direction: column; align-items: center; justify-content: center; height: 80vh; }
@@ -26,7 +26,7 @@
     <div id="login-box">
         <h3>Acceso Administrativo</h3>
         <input type="email" id="user" placeholder="Correo">
-        <input type="password" id="pass" placeholder="Contraseña">
+        <input type="password" id="pass" placeholder="Чontraseña">
         <button id="btn-entrar">Entrar</button>
     </div>
     <div id="admin-panel" style="display:none;">
@@ -35,7 +35,7 @@
         <div id="tab-clientes" class="tab active">
             <button onclick="cargarDatos()">Refrescar</button>
             <button onclick="ordenarCitas()">Ordenar</button>
-            <table><thead><tr><th>Fecha</th><th>Hora</th><th>Nombre</th><th>Apellido</th><th>Tel</th><th>Condición</th><th>Total del mes</th><th>Servicio</th><th>Acciones</th></tr></thead><tbody id="lista-citas"></tbody></table>
+            <table><thead><tr><th>Fecha</th><th>Hora de solicitud</th><th>Nombre</th><th>Apellido</th><th>Tel</th><th>Condición</th><th>Total confirmadas en el mes</th><th>Servicio</th><th>Acciones</th></tr></thead><tbody id="lista-citas"></tbody></table>
         </div>
         <div id="tab-modificar" class="tab">
             <h1>Gestión de Estructura</h1>
@@ -84,7 +84,7 @@
         
         const renderizarTabla = () => {
             const tbody = document.getElementById('lista-citas'); 
-            tbody.innerHTML = ""; // Limpieza estricta del DOM antes de renderizar
+            tbody.innerHTML = ""; 
             const mesActual = new Date().toISOString().slice(0, 7);
             citasLocales.forEach(item => {
                 const c = item.data, tel = c.telefono || "";
@@ -97,7 +97,6 @@
         };
 
         window.cargarDatos = async () => {
-            // Limpieza de estados para evitar duplicación
             citasLocales = []; citasCompletadas = [];
             const divCat = document.getElementById('lista-categorias'), divHor = document.getElementById('lista-horarios');
             divCat.innerHTML = ""; divHor.innerHTML = "";
@@ -108,7 +107,6 @@
             const dias = ["Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado", "Domingo"];
             for(let d of dias) { const snap = await getDoc(doc(db, "configuracion", d)); const data = snap.exists() ? snap.data() : {abierto: false, apertura: "08:00", cierre: "18:00", limite: 0}; divHor.innerHTML += `<tr><td>${d}</td><td><button onclick="toggleDia('${d}')">${data.abierto ? 'Abierto' : 'Cerrado'}</button></td><td><input type="time" id="apertura-${d}" value="${data.apertura || '08:00'}"></td><td><input type="time" id="cierre-${d}" value="${data.cierre || '18:00'}"></td><td><input type="number" id="lim-${d}" value="${data.limite || 0}" style="width:50px"></td><td><button onclick="guardarHorario('${d}')">Aceptar</button></td></tr>`; }
             
-            // Carga de datos única evitando duplicados mediante el uso de Sets si fuera necesario
             (await getDocs(collection(db, "citas"))).forEach(d => citasLocales.push({ id: d.id, data: d.data() }));
             (await getDocs(collection(db, "listo"))).forEach(d => citasCompletadas.push(d.data()));
             
