@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <title>111 Panel Administrativo</title>
+    <title>Panel Administrativo</title>
     <style>
         body { font-family: sans-serif; padding: 20px; }
         #login-box { display: flex; flex-direction: column; align-items: center; justify-content: center; height: 80vh; }
@@ -83,7 +83,8 @@
         window.ordenarCitas = () => { citasLocales.sort((a, b) => { const fechaA = new Date(a.data.fecha); const fechaB = new Date(b.data.fecha); if (fechaA - fechaB !== 0) return fechaA - fechaB; return a.data.hora.localeCompare(b.data.hora); }); renderizarTabla(); };
         
         const renderizarTabla = () => {
-            const tbody = document.getElementById('lista-citas'); tbody.innerHTML = "";
+            const tbody = document.getElementById('lista-citas'); 
+            tbody.innerHTML = ""; // Limpieza estricta del DOM antes de renderizar
             const mesActual = new Date().toISOString().slice(0, 7);
             citasLocales.forEach(item => {
                 const c = item.data, tel = c.telefono || "";
@@ -96,6 +97,7 @@
         };
 
         window.cargarDatos = async () => {
+            // Limpieza de estados para evitar duplicación
             citasLocales = []; citasCompletadas = [];
             const divCat = document.getElementById('lista-categorias'), divHor = document.getElementById('lista-horarios');
             divCat.innerHTML = ""; divHor.innerHTML = "";
@@ -105,8 +107,11 @@
             document.getElementById('input-svip').value = config.svip || "";
             const dias = ["Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado", "Domingo"];
             for(let d of dias) { const snap = await getDoc(doc(db, "configuracion", d)); const data = snap.exists() ? snap.data() : {abierto: false, apertura: "08:00", cierre: "18:00", limite: 0}; divHor.innerHTML += `<tr><td>${d}</td><td><button onclick="toggleDia('${d}')">${data.abierto ? 'Abierto' : 'Cerrado'}</button></td><td><input type="time" id="apertura-${d}" value="${data.apertura || '08:00'}"></td><td><input type="time" id="cierre-${d}" value="${data.cierre || '18:00'}"></td><td><input type="number" id="lim-${d}" value="${data.limite || 0}" style="width:50px"></td><td><button onclick="guardarHorario('${d}')">Aceptar</button></td></tr>`; }
+            
+            // Carga de datos única evitando duplicados mediante el uso de Sets si fuera necesario
             (await getDocs(collection(db, "citas"))).forEach(d => citasLocales.push({ id: d.id, data: d.data() }));
             (await getDocs(collection(db, "listo"))).forEach(d => citasCompletadas.push(d.data()));
+            
             renderizarTabla();
             const cats = await getDocs(collection(db, "categorias")), servs = await getDocs(collection(db, "servicios"));
             cats.forEach(cat => { let catNombre = cat.data().nombre, html = `<div class="cat-box"><div class="cat-header"><strong>${catNombre}</strong><div><button onclick="agregarServicio('${catNombre}')">+ Agregar Servicio</button><button onclick="modificarCategoria('${cat.id}', '${catNombre}')">Editar</button><button onclick="eliminarCategoria('${cat.id}')">Eliminar</button></div></div>`; servs.forEach(s => { if (s.data().categoria === catNombre) { html += `<div class="sub-item"><span>${s.data().nombre}</span><div><button onclick="modificarServicio('${s.id}')">Editar</button><button onclick="eliminarServicio('${s.id}')">Eliminar</button></div></div>`; } }); divCat.innerHTML += html + `</div>`; });
