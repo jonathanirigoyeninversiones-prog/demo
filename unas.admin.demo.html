@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <title>xxx Panel Administrativo</title>
+    <title>Panel Administrativo</title>
     <style>
         body { font-family: sans-serif; padding: 20px; }
         #login-box { display: flex; flex-direction: column; align-items: center; justify-content: center; height: 80vh; }
@@ -11,13 +11,20 @@
         .active { display: block; }
         table { width: 100%; border-collapse: collapse; margin-top: 10px; }
         th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
-        /* Filas alternas: impar transparente, par gris claro */
+        
+        /* Estilos de tablas */
         table tr:nth-child(odd) { background-color: transparent; }
         table tr:nth-child(even) { background-color: #f2f2f2; }
+        
         .confirmado { background-color: #d4edda !important; }
         .cat-box { border: 1px solid #333; padding: 10px; margin-top: 10px; border-radius: 5px; }
         .cat-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
-        .sub-item { display: flex; justify-content: space-between; padding: 5px; border-bottom: 1px solid #eee; background: #f9f9f9; }
+        
+        /* Estilos de sub-items (Servicios) alternos */
+        .sub-item { display: flex; justify-content: space-between; padding: 5px; border-bottom: 1px solid #eee; }
+        .cat-box .sub-item:nth-child(odd) { background-color: transparent; }
+        .cat-box .sub-item:nth-child(even) { background-color: #f2f2f2; }
+        
         .horario-box { border: 1px solid #ccc; padding: 15px; margin-top: 20px; }
     </style>
 </head>
