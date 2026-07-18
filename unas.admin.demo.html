@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <title>Panel Administrativo</title>
+    <title>111 Panel Administrativo</title>
     <style>
         body { font-family: sans-serif; padding: 20px; }
         #login-box { display: flex; flex-direction: column; align-items: center; justify-content: center; height: 80vh; }
@@ -70,7 +70,16 @@
         window.guardarHorario = async (dia) => { const apertura = document.getElementById(`apertura-${dia}`).value, cierre = document.getElementById(`cierre-${dia}`).value, limite = document.getElementById(`lim-${dia}`).value; await setDoc(doc(db, "configuracion", dia), { apertura, cierre, limite: parseInt(limite) }, { merge: true }); alert("Guardado"); };
         window.toggleDia = async (dia) => { const docRef = doc(db, "configuracion", dia); const snap = await getDoc(docRef); const nuevoEstado = snap.exists() ? !snap.data().abierto : true; await setDoc(docRef, { abierto: nuevoEstado }, { merge: true }); cargarDatos(); };
         window.confirmarCita = async (id, estadoActual) => { await updateDoc(doc(db, "citas", id), { confirmado: !estadoActual }); cargarDatos(); };
-        window.gestionarCita = async (id, destino) => { const cita = citasLocales.find(c => c.id === id); if(cita) { await addDoc(collection(db, destino), { ...cita.data, fechaFin: new Date().toISOString() }); await deleteDoc(doc(db, "citas", id)); } cargarDatos(); };
+        
+        window.gestionarCita = async (id, destino) => { 
+            const cita = citasLocales.find(c => c.id === id); 
+            if(cita) { 
+                await addDoc(collection(db, destino), { ...cita.data, fechaFin: new Date().toISOString() }); 
+                await deleteDoc(doc(db, "citas", id)); 
+                cargarDatos(); 
+            } 
+        };
+        
         window.ordenarCitas = () => { citasLocales.sort((a, b) => { const fechaA = new Date(a.data.fecha); const fechaB = new Date(b.data.fecha); if (fechaA - fechaB !== 0) return fechaA - fechaB; return a.data.hora.localeCompare(b.data.hora); }); renderizarTabla(); };
         
         const renderizarTabla = () => {
