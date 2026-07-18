@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <title>Reserva de Citas - Salon Beauty</title>
+    <title>111 Reserva de Citas - Salon Beauty</title>
     <style>
         body { background-image: url('fondo-unas.png'); background-size: cover; background-position: center; min-height: 100vh; margin: 0; font-family: sans-serif; }
         .container { background: rgba(255, 255, 255, 0.95); padding: 30px; border-radius: 15px; max-width: 600px; margin: 40px auto; }
@@ -49,29 +49,56 @@
         });
 
         document.getElementById('fecha-cita').setAttribute('min', new Date().toISOString().split('T')[0]);
+        
         window.validarDia = async () => {
             const fechaVal = document.getElementById('fecha-cita').value;
             const msg = document.getElementById('msg-dia');
             const fechaSel = new Date(fechaVal + 'T00:00:00');
             const hoy = new Date(); hoy.setHours(0,0,0,0);
+            
             if (fechaSel < hoy) { msg.innerHTML = "No se puede reservar en días pasados."; return; }
+            
             const diasSemana = ["Domingo", "Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado"];
             const diaNombre = diasSemana[fechaSel.getDay()];
             const snap = await getDoc(doc(db, "configuracion", diaNombre));
-            if (!snap.exists() || !snap.data().abierto) { msg.innerHTML = "Lo lamentamos, este día no se laborará."; return; }
-            const snapLim = await getDoc(doc(db, "configuracion", diaNombre));
-            const maxCitas = snapLim.exists() && snapLim.data().limite ? parseInt(snapLim.data().limite) : 0;
+            
+            const formatAMPM = (timeStr) => {
+                let [hours, minutes] = timeStr.split(':');
+                let ampm = hours >= 12 ? 'PM' : 'AM';
+                hours = hours % 12;
+                hours = hours ? hours : 12; 
+                return `${hours}:${minutes} ${ampm}`;
+            };
+
+            if (!snap.exists() || !snap.data().abierto) {
+                msg.innerHTML = "Lo lamentamos, este día no se laborará.";
+                document.getElementById('categorias-container').style.display = "none";
+                return;
+            }
+
+            const data = snap.data();
+            const apertura = formatAMPM(data.apertura || "08:00");
+            const cierre = formatAMPM(data.cierre || "18:00");
+            
+            msg.innerHTML = `Día disponible. Horarios de atención: ${apertura} a ${cierre}.`;
+
+            const maxCitas = data.limite ? parseInt(data.limite) : 0;
             if (maxCitas > 0) {
                 const qCitas = query(collection(db, "citas"), where("fecha", "==", fechaVal));
                 const totalCitas = (await getDocs(qCitas)).size;
-                if (totalCitas >= maxCitas) { msg.innerHTML = "No hay disponibilidad para este día."; return; }
+                if (totalCitas >= maxCitas) { 
+                    msg.innerHTML = "Lo lamentamos, ya no hay cupos disponibles para este día."; 
+                    document.getElementById('categorias-container').style.display = "none";
+                    return; 
+                }
             }
-            msg.innerHTML = "Día disponible.";
+
             const container = document.getElementById('categorias-container');
             container.style.display = "block";
             container.innerHTML = "<strong>Seleccione categoría:</strong><br>";
             (await getDocs(collection(db, "categorias"))).forEach(d => container.innerHTML += `<button class="btn-cat" onclick="cargarSubs('${d.data().nombre}')">${d.data().nombre}</button>`);
         };
+
         window.cargarSubs = async (cat) => {
             window.selCat = cat;
             const container = document.getElementById('subcategorias-container');
